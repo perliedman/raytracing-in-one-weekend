@@ -1,0 +1,6 @@
+[package]
+name = "rt-in-1-week"
+version = "0.1.0"
+authors = ["Per Liedman <per.liedman@dotnetmentor.se>"]
+
+[dependencies]

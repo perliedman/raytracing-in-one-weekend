@@ -1,52 +1,54 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign, Index};
 use std::f32;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
   pub e: [f32; 3]
 }
 
-pub fn build_vec3(x: f32, y: f32, z: f32) -> Vec3 {
-  Vec3 { e: [x, y, z] }
-}
 
 impl Vec3 {
+  pub fn new(x: f32, y: f32, z: f32) -> Vec3 {
+    Vec3 { e: [x, y, z] }
+  }
+
   pub fn x(&self) -> f32 {
     self.e[0]
   }
 
-  fn y(&self) -> f32 {
+  pub fn y(&self) -> f32 {
     self.e[1]
   }
 
-  fn z(&self) -> f32 {
+  pub fn z(&self) -> f32 {
     self.e[2]
   }
 
-  fn r(&self) -> f32 {
+  pub fn r(&self) -> f32 {
     self.e[0]
   }
 
-  fn g(&self) -> f32 {
+  pub fn g(&self) -> f32 {
     self.e[1]
   }
 
-  fn b(&self) -> f32 {
+  pub fn b(&self) -> f32 {
     self.e[2]
   }
 
-  fn length(&self) -> f32 {
-    (self.e[0]/self.e[0] + self.e[1]*self.e[1] + self.e[2]*self.e[2]).sqrt()
+  pub fn length(&self) -> f32 {
+    (self.e[0]*self.e[0] + self.e[1]*self.e[1] + self.e[2]*self.e[2]).sqrt()
   }
 
-  fn squared_length(&self) -> f32 {
+  pub fn squared_length(&self) -> f32 {
     self.e[0]*self.e[0] + self.e[1]*self.e[1] + self.e[2]*self.e[2]
   }
 
-  fn dot(&self, v2: Vec3) -> f32 {
+  pub fn dot(&self, v2: Vec3) -> f32 {
     self.e[0] * v2.e[0] + self.e[1] * v2.e[1] + self.e[2] * v2.e[2]
   }
 
-  fn cross(&self, v2: Vec3) -> Vec3 {
+  pub fn cross(&self, v2: Vec3) -> Vec3 {
     Vec3 { e: [
       self.e[1] * v2.e[2] - self.e[2] * v2.e[1],
       -self.e[0] * v2.e[2] - self.e[2] * v2.e[0],

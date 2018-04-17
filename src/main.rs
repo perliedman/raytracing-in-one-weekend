@@ -3,10 +3,12 @@ use std::f32;
 mod vec3;
 mod ray;
 mod hitable;
+mod camera;
 
 use vec3::Vec3;
 use ray::Ray;
 use hitable::*;
+use camera::Camera;
 
 fn main() {
   let nx = 200;
@@ -16,10 +18,12 @@ fn main() {
   println!("{} {}", nx, ny);
   println!("255");
 
-  let lower_left_corner = Vec3::new(-2.0, -1.0, -1.0);
-  let horizontal = Vec3::new(4.0, 0.0, 0.0);
-  let vertical = Vec3::new(0.0, 2.0, 0.0);
-  let origin = Vec3::new(0.0, 0.0, 0.0);
+  let camera = Camera {
+    lower_left_corner: Vec3::new(-2.0, -1.0, -1.0),
+    horizontal: Vec3::new(4.0, 0.0, 0.0),
+    vertical: Vec3::new(0.0, 2.0, 0.0),
+    origin: Vec3::new(0.0, 0.0, 0.0),
+  };
 
   let spheres = vec![
     Sphere { center: Vec3::new(0.0, 0.0, -1.0), radius: 0.5 },
@@ -32,7 +36,7 @@ fn main() {
       let u = (i as f32) / (nx as f32);
       let v = (j as f32) / (ny as f32);
 
-      let r = Ray::new(origin, lower_left_corner + u * horizontal + v * vertical);
+      let r = camera.get_ray(u, v);
       let col = color(r, &world);
 
       let ir = (255.99 * col[0]) as i32;

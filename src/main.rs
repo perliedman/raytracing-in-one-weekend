@@ -52,8 +52,8 @@ fn color(r: Ray, world: &Hitable) -> Vec3 {
   let hit = world.hit(&r, 0.0, f32::MAX);
 
   match hit {
-    Some(hitRecord) => {
-      let n = hitRecord.normal;
+    Some(hit_record) => {
+      let n = hit_record.normal;
       return 0.5 * Vec3::new(n.x() + 1.0, n.y() + 1.0, n.z() + 1.0);
     },
     None => {

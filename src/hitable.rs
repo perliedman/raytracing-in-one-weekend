@@ -15,14 +15,13 @@ pub trait Hitable {
 impl Hitable for Vec<Box<Hitable>> {
   fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
     let mut hit: Option<HitRecord> = None;
-    let closestSoFar = tmax;
 
     for hitable in self {
-      if let Some(candidateHit) = hitable.hit(r, tmin, tmax) {
+      if let Some(candidate_hit) = hitable.hit(r, tmin, tmax) {
         match hit {
-          None => hit = Some(candidateHit),
-          Some(prev) => if candidateHit.t < prev.t {
-            hit = Some(candidateHit);
+          None => hit = Some(candidate_hit),
+          Some(prev) => if candidate_hit.t < prev.t {
+            hit = Some(candidate_hit);
           }
         }
       }

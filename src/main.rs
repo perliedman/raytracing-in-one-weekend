@@ -1,4 +1,7 @@
+extern crate rand;
+
 use std::f32;
+use rand::{Rng, thread_rng};
 
 mod vec3;
 mod ray;
@@ -13,6 +16,9 @@ use camera::Camera;
 fn main() {
   let nx = 200;
   let ny = 100;
+  let ns = 100;
+
+  let mut rng = rand::thread_rng();
 
   println!("P3");
   println!("{} {}", nx, ny);
@@ -33,11 +39,17 @@ fn main() {
 
   for j in (0..ny).rev() {
     for i in 0..nx {
-      let u = (i as f32) / (nx as f32);
-      let v = (j as f32) / (ny as f32);
+      let mut col = Vec3::new(0.0, 0.0, 0.0);
 
-      let r = camera.get_ray(u, v);
-      let col = color(r, &world);
+      for _s in 0..ns {
+        let u = ((i as f32) + rng.gen::<f32>()) / (nx as f32);
+        let v = ((j as f32) + rng.gen::<f32>()) / (ny as f32);
+
+        let r = camera.get_ray(u, v);
+        col += color(r, &world);
+      }
+
+      col /= ns as f32;
 
       let ir = (255.99 * col[0]) as i32;
       let ig = (255.99 * col[1]) as i32;

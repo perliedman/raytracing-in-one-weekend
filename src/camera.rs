@@ -26,10 +26,6 @@ impl Camera {
     let u = unit_vector(vup.cross(w));
     let v = w.cross(u);
 
-    eprintln!("{:?}", w);
-    eprintln!("{:?}", u);
-    eprintln!("{:?}", v);
-
     Camera {
       lower_left_corner: lookfrom - half_width * focus_dist * u - half_height * focus_dist * v - focus_dist * w,
       horizontal: 2.0 * half_width * focus_dist * u,

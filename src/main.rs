@@ -29,8 +29,10 @@ fn main() {
   };
 
   let spheres = vec![
-    Sphere { center: Vec3::new(0.0, 0.0, -1.0), radius: 0.5 },
-    Sphere { center: Vec3::new(0.0, -100.5, -1.0), radius: 100.0 },
+    Sphere { center: Vec3::new(0.0, 0.0, -1.0), radius: 0.5, material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.3, 0.3) }) },
+    Sphere { center: Vec3::new(0.0, -100.5, -1.0), radius: 100.0, material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.8, 0.0) }) },
+    Sphere { center: Vec3::new(1.0, 0.0, -1.0), radius: 0.5, material: Box::new(Metal { albedo: Vec3::new(0.8, 0.6, 0.2) }) },
+    Sphere { center: Vec3::new(-1.0, 0.0, -1.0), radius: 0.5, material: Box::new(Metal { albedo: Vec3::new(0.8, 0.8, 0.8) }) },
   ];
   let world: Vec<Box<Hitable>> = spheres.into_iter().map(|s| Box::new(s) as Box<Hitable>).collect();
 
@@ -43,7 +45,7 @@ fn main() {
         let v = ((j as f32) + rand::random::<f32>()) / (ny as f32);
 
         let r = camera.get_ray(u, v);
-        col += color(r, &world);
+        col += color(r, &world, 0);
       }
 
       col /= ns as f32;
@@ -58,27 +60,28 @@ fn main() {
   }
 }
 
-fn color(r: Ray, world: &Hitable) -> Vec3 {
+fn color(r: Ray, world: &Hitable, depth: i32) -> Vec3 {
   let hit = world.hit(&r, 0.001, f32::MAX);
 
   match hit {
     Some(rec) => {
-      let target = rec.p + rec.normal + random_in_unit_sphere();
-      return 0.5 * color(Ray::new(rec.p, target - rec.p), world);
+      if depth < 50 {
+        match rec.material.scatter(&r, &rec) {
+          Some(scatter) => {
+            if let Some(bounce) = scatter.ray {
+              return scatter.color * color(bounce, world, depth + 1)
+            }
+          },
+          None => {}
+        }
+      }
+
+      return Vec3::new(0.0, 0.0, 0.0);
     },
     None => {
       let unit_direction = vec3::unit_vector(r.direction);
       let t = 0.5 * (unit_direction.y() + 1.0);
       return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
-    }
-  }
-}
-
-fn random_in_unit_sphere() -> Vec3 {
-  loop {
-    let p = 2.0 * Vec3::new(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>()) - Vec3::new(1.0, 1.0, 1.0);
-    if p.squared_length() <= 1.0 {
-      return p;
     }
   }
 }

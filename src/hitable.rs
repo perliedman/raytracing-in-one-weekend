@@ -131,7 +131,7 @@ impl Material for Dielectric {
 
     match refract(&r_in.direction, &outward_normal, ni_over_nt) {
       Some(refraction) => { 
-        eprintln!("refraction");
+        // eprintln!("refraction");
         if rand::random::<f32>() > schlick(cosine, self.ref_idx) {
           return Some(Scatter { color: albedo, ray: Some(Ray::new(rec.p, refraction)) });
         }
@@ -139,7 +139,7 @@ impl Material for Dielectric {
       None => { }
     }
     
-    eprintln!("reflection");
+    // eprintln!("reflection");
     Some(Scatter { color: albedo, ray: Some(Ray::new(rec.p, reflect(&unit_vector(r_in.direction), &rec.normal))) })
   }
 }

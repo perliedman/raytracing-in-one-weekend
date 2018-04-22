@@ -21,12 +21,13 @@ fn main() {
   println!("{} {}", nx, ny);
   println!("255");
 
-  let camera = Camera {
-    lower_left_corner: Vec3::new(-2.0, -1.0, -1.0),
-    horizontal: Vec3::new(4.0, 0.0, 0.0),
-    vertical: Vec3::new(0.0, 2.0, 0.0),
-    origin: Vec3::new(0.0, 0.0, 0.0),
-  };
+  let camera = Camera::new(
+    Vec3::new(-2.0, 2.0, 1.0),
+    Vec3::new(0.0, 0.0, -1.0),
+    Vec3::new(0.0, 1.0, 0.0),
+    45.0,
+    (nx as f32) / (ny as f32));
+  eprintln!("{:?}", camera);
 
   let spheres = vec![
     Sphere { center: Vec3::new(0.0, 0.0, -1.0), radius: 0.5, material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.3, 0.3) }) },

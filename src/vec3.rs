@@ -37,7 +37,7 @@ impl Vec3 {
   }
 
   pub fn length(&self) -> f32 {
-    (self.e[0]*self.e[0] + self.e[1]*self.e[1] + self.e[2]*self.e[2]).sqrt()
+    (self.squared_length()).sqrt()
   }
 
   pub fn squared_length(&self) -> f32 {
@@ -51,7 +51,7 @@ impl Vec3 {
   pub fn cross(&self, v2: Vec3) -> Vec3 {
     Vec3 { e: [
       self.e[1] * v2.e[2] - self.e[2] * v2.e[1],
-      -self.e[0] * v2.e[2] - self.e[2] * v2.e[0],
+      -(self.e[0] * v2.e[2] - self.e[2] * v2.e[0]),
       self.e[0] * v2.e[1] - self.e[1] * v2.e[0]
     ]}
   }
@@ -180,7 +180,32 @@ impl Index<usize> for Vec3 {
 }
 
 pub fn unit_vector(v: Vec3) -> Vec3 {
-  let mut r = Vec3 { e: [v.e[0], v.e[1], v.e[2]] };
-  r /= v.length();
-  r
+  v / v.length()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test()]
+  fn cross_product1() {
+    let a = Vec3::new(1.0, 0.0, 0.0);
+    let b = Vec3::new(0.0, 1.0, 0.0);
+
+    let c = a.cross(b);
+    assert_eq!(0.0, c.x());
+    assert_eq!(0.0, c.y());
+    assert_eq!(1.0, c.z());
+  }
+
+  #[test()]
+  fn cross_product2() {
+    let a = Vec3::new(2.0, 3.0, 4.0);
+    let b = Vec3::new(5.0, 6.0, 7.0);
+
+    let c = a.cross(b);
+    assert_eq!(-3.0, c.x());
+    assert_eq!(6.0, c.y());
+    assert_eq!(-3.0, c.z());
+  }
 }

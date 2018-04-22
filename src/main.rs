@@ -31,8 +31,9 @@ fn main() {
   let spheres = vec![
     Sphere { center: Vec3::new(0.0, 0.0, -1.0), radius: 0.5, material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.3, 0.3) }) },
     Sphere { center: Vec3::new(0.0, -100.5, -1.0), radius: 100.0, material: Box::new(Lambertian { albedo: Vec3::new(0.8, 0.8, 0.0) }) },
-    Sphere { center: Vec3::new(1.0, 0.0, -1.0), radius: 0.5, material: Box::new(Metal { albedo: Vec3::new(0.8, 0.6, 0.2) }) },
-    Sphere { center: Vec3::new(-1.0, 0.0, -1.0), radius: 0.5, material: Box::new(Metal { albedo: Vec3::new(0.8, 0.8, 0.8) }) },
+    Sphere { center: Vec3::new(1.0, 0.0, -1.0), radius: 0.5, material: Box::new(Metal { albedo: Vec3::new(0.8, 0.6, 0.2), fuzz: 0.3 }) },
+    Sphere { center: Vec3::new(-1.0, 0.0, -1.0), radius: 0.5, material: Box::new(Dielectric { ref_idx: 1.5 }) },
+    Sphere { center: Vec3::new(-1.0, 0.0, -1.0), radius: -0.45, material: Box::new(Dielectric { ref_idx: 1.5 }) },
   ];
   let world: Vec<Box<Hitable>> = spheres.into_iter().map(|s| Box::new(s) as Box<Hitable>).collect();
 

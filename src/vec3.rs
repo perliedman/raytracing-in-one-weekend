@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign, MulAssign, DivAssign, Index};
+use std::ops::*;
 use std::f32;
 
 #[derive(Clone, Copy, Debug)]
@@ -110,6 +110,14 @@ impl Mul<f32> for Vec3 {
 
   fn mul(self, t: f32) -> Vec3 {
     Vec3 { e: [self.e[0] * t, self.e[1] * t, self.e[2] * t] }
+  }
+}
+
+impl Neg for Vec3 {
+  type Output = Vec3;
+
+  fn neg(self) -> Vec3 {
+    Vec3 { e: [-self.e[0], -self.e[1], -self.e[2]] }
   }
 }
 

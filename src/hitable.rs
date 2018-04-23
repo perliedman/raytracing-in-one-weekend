@@ -67,7 +67,6 @@ impl Hitable for Sphere {
   } 
 }
 
-#[derive(Clone, Copy)]
 pub struct Scatter {
   pub color: Vec3,
   pub ray: Option<Ray>

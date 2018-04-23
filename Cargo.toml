@@ -5,3 +5,4 @@ authors = ["Per Liedman <per.liedman@dotnetmentor.se>"]
 
 [dependencies]
 rand = "0.4"
+png = "0.11"

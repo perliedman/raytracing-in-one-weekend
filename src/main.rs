@@ -1,4 +1,5 @@
 extern crate rand;
+extern crate png;
 
 use std::f32;
 
@@ -7,6 +8,10 @@ mod ray;
 mod hitable;
 mod camera;
 mod renderer;
+
+use std::io;
+use std::io::BufWriter;
+use png::HasParameters;
 
 use vec3::Vec3;
 use hitable::*;
@@ -33,7 +38,15 @@ fn main() {
     dist_to_focus);
 
   let world = random_scene();
-  render(&world, &camera, nx, ny, ns);
+  let pixels = render(&world, &camera, nx, ny, ns);
+
+  let ref mut w = BufWriter::new(io::stdout());
+
+  let mut encoder = png::Encoder::new(w, nx as u32, ny as u32);
+  encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);
+  let mut writer = encoder.write_header().unwrap();
+
+  writer.write_image_data(&pixels).unwrap();
 }
 
 fn random_scene() -> Vec<Box<Hitable>> {

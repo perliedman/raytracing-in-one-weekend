@@ -8,6 +8,7 @@ mod ray;
 mod hitable;
 mod camera;
 mod renderer;
+mod aabb;
 
 use std::io;
 use std::io::BufWriter;
@@ -49,7 +50,7 @@ fn main() {
   writer.write_image_data(&pixels).unwrap();
 }
 
-fn random_scene() -> Vec<Box<Hitable>> {
+fn random_scene() -> &'static [Box<Hitable>] {
   let scene_c = Vec3::new(4.0, 0.0, 2.0);
 
   let mut spheres = vec![
@@ -93,5 +94,5 @@ fn random_scene() -> Vec<Box<Hitable>> {
   }
 
   let world: Vec<Box<Hitable>> = spheres.into_iter().map(|s| Box::new(s) as Box<Hitable>).collect();
-  world
+  &world
 }

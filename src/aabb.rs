@@ -16,8 +16,8 @@ impl Aabb {
       let t0 = ffmin(mint, maxt);
       let t1 = ffmax(mint, maxt);
 
-      tmin = ffmin(t0, tmin);
-      tmax = ffmax(t1, tmax);
+      tmin = ffmax(t0, tmin);
+      tmax = ffmin(t1, tmax);
 
       if tmax <= tmin {
         return false;

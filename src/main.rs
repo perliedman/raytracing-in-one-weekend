@@ -14,15 +14,16 @@ use std::io;
 use std::io::BufWriter;
 use png::HasParameters;
 
-use vec3::Vec3;
+use vec3::{Vec3, unit_vector};
+use ray::Ray;
 use hitable::*;
 use camera::Camera;
-use renderer::render;
+use renderer::*;
 
 fn main() {
   let nx = 320;
   let ny = 320;
-  let ns = 5;
+  let ns = 150;
 
   let lookfrom = Vec3::new(10.0, 1.8, 2.4);
   let lookat = Vec3::new(0.0, 0.0, 0.5);
@@ -40,10 +41,14 @@ fn main() {
 
   let mut world = random_scene();
   let bvh = BvhTree::new(world.as_mut());
+  let scene = Scene {
+    model: &bvh,
+    environment: &simple_sky
+  };
 
   // println!("{:?}", bvh);
 
-  let pixels = render(&bvh, &camera, nx, ny, ns);
+  let pixels = render(&scene, &camera, nx, ny, ns);
 
   let ref mut w = BufWriter::new(io::stdout());
 
@@ -99,4 +104,10 @@ fn random_scene() -> Vec<Box<Hitable>> {
 
   let world: Vec<Box<Hitable>> = spheres.into_iter().map(|s| Box::new(s) as Box<Hitable>).collect();
   world
+}
+
+fn simple_sky(r: &Ray) -> Vec3 {
+  let unit_direction = unit_vector(r.direction);
+  let t = 0.5 * (unit_direction.y() + 1.0);
+  return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
 }

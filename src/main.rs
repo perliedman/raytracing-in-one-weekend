@@ -8,6 +8,7 @@ mod ray;
 mod hitable;
 mod camera;
 mod renderer;
+mod aabb;
 
 use std::io;
 use std::io::BufWriter;
@@ -37,8 +38,12 @@ fn main() {
     0.1,
     dist_to_focus);
 
-  let world = random_scene();
-  let pixels = render(&world, &camera, nx, ny, ns);
+  let mut world = random_scene();
+  let bvh = BvhTree::new(world.as_mut());
+
+  // println!("{:?}", bvh);
+
+  let pixels = render(&bvh, &camera, nx, ny, ns);
 
   let ref mut w = BufWriter::new(io::stdout());
 

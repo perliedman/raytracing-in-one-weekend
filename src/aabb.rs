@@ -2,7 +2,7 @@
 use ::vec3::{Vec3};
 use ::ray::Ray;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Aabb {
   pub min: Vec3,
   pub max: Vec3

@@ -38,8 +38,12 @@ fn main() {
     0.1,
     dist_to_focus);
 
-  let world = random_scene();
-  let pixels = render(&world, &camera, nx, ny, ns);
+  let mut world = random_scene();
+  let bvh = BvhTree::new(world.as_mut());
+
+  // println!("{:?}", bvh);
+
+  let pixels = render(&bvh, &camera, nx, ny, ns);
 
   let ref mut w = BufWriter::new(io::stdout());
 
@@ -50,7 +54,7 @@ fn main() {
   writer.write_image_data(&pixels).unwrap();
 }
 
-fn random_scene() -> &'static [Box<Hitable>] {
+fn random_scene() -> Vec<Box<Hitable>> {
   let scene_c = Vec3::new(4.0, 0.0, 2.0);
 
   let mut spheres = vec![
@@ -94,5 +98,5 @@ fn random_scene() -> &'static [Box<Hitable>] {
   }
 
   let world: Vec<Box<Hitable>> = spheres.into_iter().map(|s| Box::new(s) as Box<Hitable>).collect();
-  &world
+  world
 }

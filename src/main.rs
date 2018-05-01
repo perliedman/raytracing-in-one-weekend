@@ -64,8 +64,10 @@ fn main() {
 fn random_scene() -> Vec<Box<Hitable>> {
   let scene_c = Vec3::new(4.0, 0.0, 2.0);
 
+  let checker = CheckerTexture { odd: Box::new(ConstantTexture::new(0.2, 0.3, 0.1)), even: Box::new(ConstantTexture::new(0.9, 0.9, 0.9)) };
+
   let mut spheres = vec![
-    Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Box::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.7, 0.26, 0.10)) }) },
+    Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Box::new(Lambertian { albedo: Box::new(checker) }) },
     Sphere { center: Vec3::new(0.0, 1.0, 0.0), radius: 1.0, material: Box::new(Dielectric { ref_idx: 1.5 }) },
     Sphere { center: Vec3::new(-4.0, 1.0, 0.0), radius: 1.0, material: Box::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.4, 0.2, 0.1)) }) },
     Sphere { center: Vec3::new(4.0, 1.0, 0.0), radius: 1.0, material: Box::new(Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 }) }

@@ -40,6 +40,26 @@ impl Texture for ConstantTexture {
   }
 }
 
+pub struct CheckerTexture {
+  pub odd: Box<Texture>,
+  pub even: Box<Texture>
+}
+
+impl Texture for CheckerTexture {
+  fn value(&self, u: f32, v: f32, p: &Vec3) -> Vec3 {
+    let sines = 
+      (p.x()*10.0).sin() *
+      (p.y()*10.0).sin() *
+      (p.z()*10.0).sin();
+
+    if sines < 0.0 {
+      self.odd.value(u, v, p)
+    } else {
+      self.even.value(u, v, p)
+    }
+  }
+}
+
 pub struct Lambertian {
   pub albedo: Box<Texture>
 }

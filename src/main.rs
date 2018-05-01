@@ -23,9 +23,9 @@ use camera::Camera;
 use renderer::*;
 
 fn main() {
-  let nx = 320;
-  let ny = 320;
-  let ns = 150;
+  let nx = 640;
+  let ny = 640;
+  let ns = 100;
 
   let lookfrom = Vec3::new(10.0, 1.8, 2.4);
   let lookat = Vec3::new(0.0, 0.0, 0.5);
@@ -45,7 +45,8 @@ fn main() {
   let bvh = BvhTree::new(world.as_mut());
   let scene = Scene {
     model: &bvh,
-    environment: &simple_sky
+    environment: &void
+    // environment: &simple_sky
   };
 
   // println!("{:?}", bvh);
@@ -68,7 +69,7 @@ fn random_scene() -> Vec<Box<Hitable>> {
 
   let mut spheres = vec![
     Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Box::new(Lambertian { albedo: Box::new(checker) }) },
-    Sphere { center: Vec3::new(0.0, 1.0, 0.0), radius: 1.0, material: Box::new(Dielectric { ref_idx: 1.5 }) },
+    Sphere { center: Vec3::new(0.0, 1.0, 0.0), radius: 1.0, material: Box::new(DiffuseLight { emit: Box::new(ConstantTexture::new(0.6*25.0, 0.55*25.0, 0.4*25.0)) }) },
     Sphere { center: Vec3::new(-4.0, 1.0, 0.0), radius: 1.0, material: Box::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.4, 0.2, 0.1)) }) },
     Sphere { center: Vec3::new(4.0, 1.0, 0.0), radius: 1.0, material: Box::new(Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 }) }
   ];
@@ -114,4 +115,8 @@ fn simple_sky(r: &Ray) -> Vec3 {
   let unit_direction = unit_vector(r.direction);
   let t = 0.5 * (unit_direction.y() + 1.0);
   return (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
+}
+
+fn void(_r: &Ray) -> Vec3 {
+  Vec3::new(0.0, 0.0, 0.0)
 }

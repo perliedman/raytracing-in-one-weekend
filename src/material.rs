@@ -8,7 +8,9 @@ pub struct HitRecord<'a> {
   pub t: f32,
   pub p: Vec3,
   pub normal: Vec3,
-  pub material: &'a Material
+  pub material: &'a Material,
+  pub u: f32,
+  pub v: f32
 }
 
 pub struct Scatter {
@@ -18,6 +20,9 @@ pub struct Scatter {
 
 pub trait Material {
   fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<Scatter>;
+  fn emitted(&self, _u: f32, _v: f32, _p: &Vec3) -> Vec3 {
+    Vec3::new(0.0, 0.0, 0.0)
+  }
 }
 
 pub trait Texture {
@@ -124,6 +129,20 @@ impl Material for Dielectric {
     
     // eprintln!("reflection");
     Some(Scatter { color: albedo, ray: Some(Ray::new(rec.p, reflect(&unit_vector(r_in.direction), &rec.normal))) })
+  }
+}
+
+pub struct DiffuseLight {
+  pub emit: Box<Texture>
+}
+
+impl Material for DiffuseLight {
+  fn scatter(&self, _r_in: &Ray, _rec: &HitRecord) -> Option<Scatter> {
+    None
+  }
+
+  fn emitted(&self, u: f32, v: f32, p: &Vec3) -> Vec3 {
+    self.emit.value(u, v, p)
   }
 }
 

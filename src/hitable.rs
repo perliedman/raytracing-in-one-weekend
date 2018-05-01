@@ -88,7 +88,10 @@ impl Hitable for Sphere {
           t,
           p,
           normal: (p - self.center) / self.radius,
-          material: &*self.material
+          material: &*self.material,
+          // TODO: texture coords
+          u: 0.0,
+          v: 0.0
         });
       }
     }

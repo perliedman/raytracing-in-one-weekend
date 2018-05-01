@@ -30,9 +30,9 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
       col /= ns as f32;
       col = Vec3::new(col[0].sqrt(), col[1].sqrt(), col[2].sqrt());
 
-      pixels.push((255.99 * col[0]) as u8);
-      pixels.push((255.99 * col[1]) as u8);
-      pixels.push((255.99 * col[2]) as u8);
+      pixels.push((255.99 * col[0]).min(255.0) as u8);
+      pixels.push((255.99 * col[1]).min(255.0) as u8);
+      pixels.push((255.99 * col[2]).min(255.0) as u8);
     }
   }
 
@@ -41,21 +41,23 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
 
 fn color(r: &Ray, scene: &Scene, depth: i32) -> Vec3 {
   let hit = scene.model.hit(&r, 0.001, f32::MAX);
+  let mut emitted = Vec3::new(0.0, 0.0, 0.0);
 
   match hit {
     Some(rec) => {
       if depth < 50 {
+        emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
         match rec.material.scatter(&r, &rec) {
           Some(scatter) => {
             if let Some(bounce) = scatter.ray {
-              return scatter.color * color(&bounce, scene, depth + 1)
+              return emitted + scatter.color * color(&bounce, scene, depth + 1)
             }
           },
           None => {}
         }
       }
 
-      return Vec3::new(0.0, 0.0, 0.0);
+      return emitted;
     },
     None => return (scene.environment)(&r)
   }

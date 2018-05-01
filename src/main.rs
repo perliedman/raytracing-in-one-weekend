@@ -9,6 +9,7 @@ mod hitable;
 mod camera;
 mod renderer;
 mod aabb;
+mod material;
 
 use std::io;
 use std::io::BufWriter;
@@ -17,6 +18,7 @@ use png::HasParameters;
 use vec3::{Vec3, unit_vector};
 use ray::Ray;
 use hitable::*;
+use material::*;
 use camera::Camera;
 use renderer::*;
 

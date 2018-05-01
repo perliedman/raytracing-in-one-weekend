@@ -20,15 +20,35 @@ pub trait Material {
   fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<Scatter>;
 }
 
+pub trait Texture {
+  fn value(&self, u: f32, v: f32, p: &Vec3) -> Vec3;
+}
+
+pub struct ConstantTexture {
+  color: Vec3
+}
+
+impl ConstantTexture {
+  pub fn new(r: f32, g: f32, b: f32) -> ConstantTexture {
+    ConstantTexture { color: Vec3::new(r, g, b) }
+  }
+}
+
+impl Texture for ConstantTexture {
+  fn value(&self, _u: f32, _v: f32, _p: &Vec3) -> Vec3 {
+    self.color
+  }
+}
+
 pub struct Lambertian {
-  pub albedo: Vec3
+  pub albedo: Box<Texture>
 }
 
 impl Material for Lambertian {
   fn scatter(&self, _r_in: &Ray, rec: &HitRecord) -> Option<Scatter> {
       let target = rec.p + rec.normal + random_in_unit_sphere();
       return Some(Scatter {
-        color: self.albedo,
+        color: self.albedo.value(0.0, 0.0, &rec.p),
         ray: Some(Ray::new(rec.p, target - rec.p))
       });
   }

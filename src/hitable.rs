@@ -1,7 +1,3 @@
-extern crate rand;
-
-use rand::Rng;
-use std::cmp::Ordering;
 use std::f32;
 use std::fmt;
 
@@ -107,184 +103,142 @@ impl Hitable for Sphere {
   }
 }
 
-#[derive(Debug)]
-pub struct BvhTree<'a> {
-  nodes: Vec<BvhNode<'a>>,
-  root: NodeId
+pub struct XyRect {
+  pub x0: f32,
+  pub x1: f32,
+  pub y0: f32,
+  pub y1: f32,
+  pub k: f32,
+  pub material: Box<Material>
 }
 
-#[derive(Debug)]
-struct BvhNode<'a> {
-  left: Option<NodeId>,
-  right: Option<NodeId>,
-  aabb: Option<Aabb>,
-  hitable: Option<&'a Box<Hitable>>
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct NodeId {
-  index: usize
-}
-
-impl<'a> BvhTree<'a> {
-  fn hit(&self, id: NodeId, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
-    let node = &self.nodes[id.index];
-
-    if node.aabb.is_none() || node.aabb.is_some() && node.aabb.unwrap().hit(r, tmin, tmax) {
-      match node.hitable {
-        Some(ref hitable) => return hitable.hit(r, tmin, tmax),
-        None => { }
-      }
-
-      let mut hit_left: Option<HitRecord> = None;
-      let mut hit_right: Option<HitRecord> = None;
-
-      if let Some(ref left_index) = node.left {
-        hit_left = self.hit(*left_index, r, tmin, tmax);
-      }
-
-      if let Some(ref right_index) = node.right {
-        hit_right = self.hit(*right_index, r, tmin, tmax);
-      }
-
-      match hit_left {
-        Some(left) => {
-          match hit_right {
-            Some(right) => if left.t < right.t { return hit_left; } else { return hit_right; },
-            None => return hit_left
-          }
-        },
-        None => {}
-      }
-
-      match hit_right {
-        Some(_right) => return hit_right,
-        None => {}
-      }
-    }
-
-    None
-  }
-}
-
-impl<'a> Hitable for BvhTree<'a> {
+impl Hitable for XyRect {
   fn bounding_box(&self) -> Option<Aabb> {
-    self.nodes[self.root.index].aabb
+    Some(Aabb {
+      min: Vec3::new(self.x0, self.y0, self.k - 1e-4),
+      max: Vec3::new(self.x1, self.y1, self.k + 1e-4)
+    })
   }
 
   fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
-    self.hit(self.root, r, tmin, tmax)
+    let t = (self.k - r.origin.z()) / r.direction.z();
+
+    if t < tmin || t > tmax { return None; }
+
+    let x = r.origin.x() + t * r.direction.x();
+    let y = r.origin.y() + t * r.direction.y();
+
+    if x < self.x0 || x > self.x1 || y < self.y0 || y > self.y1 {
+      return None;
+    }
+
+    return Some(HitRecord {
+      u: (x - self.x0) / (self.x1 - self.x0),
+      v: (y - self.y0) / (self.y1 - self.y0),
+      t,
+      material: &*self.material,
+      p: r.point_at_parameter(t),
+      normal: Vec3::new(0.0, 0.0, 1.0)
+    })
   }
 }
 
-impl<'a> BvhTree<'a> {
-  pub fn new(l: &'a mut [Box<Hitable>]) -> BvhTree<'a> {
-    let mut tree = BvhTree { nodes: Vec::new(), root: NodeId { index: 0 } };
-    tree.root = tree.build(l);
+pub struct XzRect {
+  pub x0: f32,
+  pub x1: f32,
+  pub z0: f32,
+  pub z1: f32,
+  pub k: f32,
+  pub material: Box<Material>
+}
 
-    tree
+impl Hitable for XzRect {
+  fn bounding_box(&self) -> Option<Aabb> {
+    Some(Aabb {
+      min: Vec3::new(self.x0, self.k - 1e-4, self.z0),
+      max: Vec3::new(self.x1, self.k + 1e-4, self.z1)
+    })
   }
 
-  fn build(&mut self, l: &'a mut [Box<Hitable>]) -> NodeId {
-    let axis = rand::thread_rng().gen_range::<i32>(0, 3);
+  fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
+    let t = (self.k - r.origin.y()) / r.direction.y();
 
-    match axis {
-      0 => l.sort_by(|a, b| box_x_compare(a, b)),
-      1 => l.sort_by(|a, b| box_y_compare(a, b)),
-      2 => l.sort_by(|a, b| box_z_compare(a, b)),
-      _ => panic!("Unexpected axis")
+    if t < tmin || t > tmax { return None; }
+
+    let x = r.origin.x() + t * r.direction.x();
+    let z = r.origin.z() + t * r.direction.z();
+
+    if x < self.x0 || x > self.x1 || z < self.z0 || z > self.z1 {
+      return None;
     }
 
-    let left: NodeId;
-    let right: NodeId;
-
-    if l.len() == 1 {
-      return self.new_leaf(&l[0]);
-    } else if l.len() == 2 {
-      left = self.new_leaf(&l[0]);
-      right = self.new_leaf(&l[1]);
-    } else {
-      let half_len = l.len() / 2;
-      let (left_hitables, right_hitables) = l.split_at_mut(half_len);
-
-      left = self.build(left_hitables);
-      right = self.build(right_hitables);
-    }
-
-    if let Some(left_box) = self.nodes[left.index].aabb {
-      if let Some(right_box) = self.nodes[right.index].aabb {
-        return self.new_node(surrounding_box(&left_box, &right_box), Some(left), Some(right))
-      }
-    }
-
-    panic!("No bounding box in BvhNode::build");
-  }
-
-  fn new_leaf(&mut self, hitable: &'a Box<Hitable>) -> NodeId {
-    let next_index = self.nodes.len();
-
-    self.nodes.push(BvhNode {
-      left: None,
-      right: None,
-      aabb: hitable.bounding_box(),
-      hitable: Some(hitable)
-    });
-
-    return NodeId { index: next_index };
-  }
-
-  fn new_node(&mut self, aabb: Aabb, left: Option<NodeId>, right: Option<NodeId>) -> NodeId {
-    let next_index = self.nodes.len();
-
-    self.nodes.push(BvhNode {
-      left,
-      right,
-      aabb: Some(aabb),
-      hitable: None
-    });
-
-    return NodeId { index: next_index };
+    return Some(HitRecord {
+      u: (x - self.x0) / (self.x1 - self.x0),
+      v: (z - self.z0) / (self.z1 - self.z0),
+      t,
+      material: &*self.material,
+      p: r.point_at_parameter(t),
+      normal: Vec3::new(0.0, 0.0, 1.0)
+    })
   }
 }
 
-fn box_x_compare(a: &Box<Hitable>, b: &Box<Hitable>) -> Ordering {
-  if let Some(box_left) = a.bounding_box() {
-    if let Some(box_right) = b.bounding_box() {
-      if let Some(cmp) = box_left.min.x().partial_cmp(&box_right.min.x()) {
-        return cmp;
-      } else {
-        panic!("Can't compare");
-      }
-    }
-  }
-
-  panic!("No bounding box in BvhNode::new");
+pub struct YzRect {
+  pub y0: f32,
+  pub y1: f32,
+  pub z0: f32,
+  pub z1: f32,
+  pub k: f32,
+  pub material: Box<Material>
 }
 
-fn box_y_compare(a: &Box<Hitable>, b: &Box<Hitable>) -> Ordering {
-  if let Some(box_left) = a.bounding_box() {
-    if let Some(box_right) = b.bounding_box() {
-      if let Some(cmp) = box_left.min.y().partial_cmp(&box_right.min.y()) {
-        return cmp;
-      } else {
-        panic!("Can't compare");
-      }
-    }
+impl Hitable for YzRect {
+  fn bounding_box(&self) -> Option<Aabb> {
+    Some(Aabb {
+      min: Vec3::new(self.k - 1e-4, self.y0, self.z0),
+      max: Vec3::new(self.k + 1e-4, self.y1, self.z1)
+    })
   }
 
-  panic!("No bounding box in BvhNode::new");
+  fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
+    let t = (self.k - r.origin.x()) / r.direction.x();
+
+    if t < tmin || t > tmax { return None; }
+
+    let y = r.origin.y() + t * r.direction.y();
+    let z = r.origin.z() + t * r.direction.z();
+
+    if y < self.y0 || y > self.y1 || z < self.z0 || z > self.z1 {
+      return None;
+    }
+
+    return Some(HitRecord {
+      u: (y - self.y0) / (self.y1 - self.y0),
+      v: (z - self.z0) / (self.z1 - self.z0),
+      t,
+      material: &*self.material,
+      p: r.point_at_parameter(t),
+      normal: Vec3::new(0.0, 0.0, 1.0)
+    })
+  }
 }
 
-fn box_z_compare(a: &Box<Hitable>, b: &Box<Hitable>) -> Ordering {
-  if let Some(box_left) = a.bounding_box() {
-    if let Some(box_right) = b.bounding_box() {
-      if let Some(cmp) = box_left.min.z().partial_cmp(&box_right.min.z()) {
-        return cmp;
-      } else {
-        panic!("Can't compare");
-      }
-    }
+pub struct FlipNormals {
+  pub hitable: Box<Hitable>
+}
+
+impl Hitable for FlipNormals {
+  fn bounding_box(&self) -> Option<Aabb> {
+    self.hitable.bounding_box()
   }
 
-  panic!("No bounding box in BvhNode::new");
+  fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
+    match self.hitable.hit(r, tmin, tmax) {
+      Some(mut hit) => {
+        hit.normal = -hit.normal;
+        return Some(hit);
+      },
+      None => None
+    }
+  }
 }

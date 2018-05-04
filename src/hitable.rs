@@ -19,7 +19,7 @@ impl fmt::Debug for Hitable {
   }
 }
 
-impl<'a> Hitable for Vec<Box<Hitable>> {
+impl Hitable for Vec<Box<Hitable>> {
   fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
     let mut hit: Option<HitRecord> = None;
 
@@ -242,4 +242,15 @@ impl Hitable for FlipNormals {
       None => None
     }
   }
+}
+
+pub fn new_box(p0: Vec3, p1: Vec3, material: Rc<Material>) -> Vec<Box<Hitable>> {
+  vec![
+    Box::new(XyRect { x0: p0.x(), x1: p1.x(), y0: p0.y(), y1: p1.y(), k: p1.z(), material: Rc::clone(&material)}),
+    Box::new(FlipNormals { hitable: Box::new(XyRect { x0: p0.x(), x1: p1.x(), y0: p0.y(), y1: p1.y(), k: p0.z(), material: Rc::clone(&material)}) }),
+    Box::new(XzRect { x0: p0.x(), x1: p1.x(), z0: p0.z(), z1: p1.z(), k: p1.y(), material: Rc::clone(&material)}),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: p0.x(), x1: p1.x(), z0: p0.z(), z1: p1.z(), k: p0.y(), material: Rc::clone(&material)}) }),
+    Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p1.x(), material: Rc::clone(&material)}),
+    Box::new(FlipNormals { hitable: Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p0.x(), material: Rc::clone(&material)}) }),
+  ]
 }

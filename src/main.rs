@@ -28,7 +28,7 @@ use bvh::BvhTree;
 fn main() {
   let nx = 320;
   let ny = 320;
-  let ns = 250;
+  let ns = 5000;
 
   // let pixels = render_random(nx, ny, ns);
   let pixels = render_cornell(nx, ny, ns);
@@ -154,6 +154,8 @@ fn cornell_box() -> Vec<Box<Hitable>> {
     Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Rc::clone(&white) }),
     Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Rc::clone(&white) }),
     Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
+    Box::new(new_box(Vec3::new(130.0, 0.0, 65.0), Vec3::new(295.0, 165.0, 230.0), Rc::clone(&white))),
+    Box::new(new_box(Vec3::new(265.0, 0.0, 295.0), Vec3::new(430.0, 330.0, 460.0), Rc::clone(&white))),
   ]
 }
 

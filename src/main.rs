@@ -2,6 +2,7 @@ extern crate rand;
 extern crate png;
 
 use std::f32;
+use std::rc::Rc;
 
 mod vec3;
 mod ray;
@@ -27,7 +28,7 @@ use bvh::BvhTree;
 fn main() {
   let nx = 320;
   let ny = 320;
-  let ns = 500;
+  let ns = 250;
 
   // let pixels = render_random(nx, ny, ns);
   let pixels = render_cornell(nx, ny, ns);
@@ -75,7 +76,7 @@ fn render_cornell(nx: usize, ny: usize, ns: usize) -> Vec<u8> {
     lookfrom,
     lookat,
     Vec3::new(0.0, 1.0, 0.0),
-    40.0,
+    50.0,
     (nx as f32) / (ny as f32),
     0.0,
     dist_to_focus);
@@ -96,11 +97,11 @@ fn random_scene() -> Vec<Box<Hitable>> {
   let checker = CheckerTexture { odd: Box::new(ConstantTexture::new(0.2, 0.3, 0.1)), even: Box::new(ConstantTexture::new(0.9, 0.9, 0.9)) };
 
   let mut models: Vec<Box<Hitable>> = vec![
-    Box::new(Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Box::new(Lambertian { albedo: Box::new(checker) }) }),
-    Box::new(Sphere { center: Vec3::new(0.0, 1.0, 0.0), radius: 1.0, material: Box::new(Dielectric { ref_idx: 1.5 }) }),
-    Box::new(Sphere { center: Vec3::new(-4.0, 1.0, 0.0), radius: 1.0, material: Box::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.4, 0.2, 0.1)) }) }),
-    Box::new(Sphere { center: Vec3::new(4.0, 1.0, 0.0), radius: 1.0, material: Box::new(Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 }) }),
-    Box::new(XyRect { x0: -12.0, x1: -8.0, y0: 0.0, y1: 2.0, k: 2.0, material: Box::new(DiffuseLight { emit: Box::new(ConstantTexture::new(0.6*25.0, 0.55*25.0, 0.4*25.0)) }) })
+    Box::new(Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Rc::new(Lambertian { albedo: Box::new(checker) }) }),
+    Box::new(Sphere { center: Vec3::new(0.0, 1.0, 0.0), radius: 1.0, material: Rc::new(Dielectric { ref_idx: 1.5 }) }),
+    Box::new(Sphere { center: Vec3::new(-4.0, 1.0, 0.0), radius: 1.0, material: Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.4, 0.2, 0.1)) }) }),
+    Box::new(Sphere { center: Vec3::new(4.0, 1.0, 0.0), radius: 1.0, material: Rc::new(Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 }) }),
+    Box::new(XyRect { x0: -12.0, x1: -8.0, y0: 0.0, y1: 2.0, k: 2.0, material: Rc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(0.6*25.0, 0.55*25.0, 0.4*25.0)) }) })
   ];
 
   for a in -11..11 {
@@ -109,17 +110,17 @@ fn random_scene() -> Vec<Box<Hitable>> {
 
       if (center - scene_c).length() > 0.9 {
         let choose_mat = rand::random::<f32>();
-        let material: Box<Material>;
+        let material: Rc<Material>;
 
         if choose_mat < 0.8 {
-          material = Box::new(Lambertian {
+          material = Rc::new(Lambertian {
             albedo: Box::new(ConstantTexture::new(
                           rand::random::<f32>() * rand::random::<f32>(),
                           rand::random::<f32>() * rand::random::<f32>(),
                           rand::random::<f32>() * rand::random::<f32>()))
           });
         } else if choose_mat < 0.95 {
-          material = Box::new(Metal {
+          material = Rc::new(Metal {
             albedo: Vec3::new(
               0.5 * (1.0 + rand::random::<f32>()),
               0.5 * (1.0 + rand::random::<f32>()),
@@ -127,7 +128,7 @@ fn random_scene() -> Vec<Box<Hitable>> {
             fuzz: 0.5 * rand::random::<f32>(),
           })
         } else {
-          material = Box::new(Dielectric { ref_idx: 1.5 })
+          material = Rc::new(Dielectric { ref_idx: 1.5 })
         }
 
         models.push(Box::new(Sphere { center, radius: 0.2, material }));
@@ -141,20 +142,18 @@ fn random_scene() -> Vec<Box<Hitable>> {
 }
 
 fn cornell_box() -> Vec<Box<Hitable>> {
-  let red = Lambertian { albedo: Box::new(ConstantTexture::new(0.65, 0.05, 0.05)) };
-  let white1 = Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) };
-  let white2 = Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) };
-  let white3 = Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) };
-  let green = Lambertian { albedo: Box::new(ConstantTexture::new(0.12, 0.45, 0.15)) };
-  let light = DiffuseLight { emit: Box::new(ConstantTexture::new(15.0, 15.0, 15.0)) };
+  let red = Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.65, 0.05, 0.05)) });
+  let white: Rc<Material> = Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) });
+  let green = Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.12, 0.45, 0.15)) });
+  let light = Rc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(15.0, 15.0, 15.0)) });
 
   vec![
-    Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Box::new(green) }),
-    Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Box::new(red) }),
-    Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: Box::new(light) }),
-    Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Box::new(white1) }),
-    Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Box::new(white2) }),
-    Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Box::new(white3) }) }),
+    Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }),
+    Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: red }),
+    Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: light }),
+    Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Rc::clone(&white) }),
+    Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Rc::clone(&white) }),
+    Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
   ]
 }
 

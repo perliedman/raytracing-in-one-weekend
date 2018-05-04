@@ -1,5 +1,6 @@
 use std::f32;
 use std::fmt;
+use std::rc::Rc;
 
 use ::material::{Material, HitRecord};
 
@@ -63,7 +64,7 @@ impl<'a> Hitable for Vec<Box<Hitable>> {
 pub struct Sphere {
   pub center: Vec3,
   pub radius: f32,
-  pub material: Box<Material>
+  pub material: Rc<Material>
 }
 
 impl Hitable for Sphere {
@@ -109,7 +110,7 @@ pub struct XyRect {
   pub y0: f32,
   pub y1: f32,
   pub k: f32,
-  pub material: Box<Material>
+  pub material: Rc<Material>
 }
 
 impl Hitable for XyRect {
@@ -149,7 +150,7 @@ pub struct XzRect {
   pub z0: f32,
   pub z1: f32,
   pub k: f32,
-  pub material: Box<Material>
+  pub material: Rc<Material>
 }
 
 impl Hitable for XzRect {
@@ -189,7 +190,7 @@ pub struct YzRect {
   pub z0: f32,
   pub z1: f32,
   pub k: f32,
-  pub material: Box<Material>
+  pub material: Rc<Material>
 }
 
 impl Hitable for YzRect {

@@ -28,7 +28,7 @@ use bvh::BvhTree;
 fn main() {
   let nx = 320;
   let ny = 320;
-  let ns = 5000;
+  let ns = 500;
 
   // let pixels = render_random(nx, ny, ns);
   let pixels = render_cornell(nx, ny, ns);
@@ -148,11 +148,11 @@ fn cornell_box() -> Vec<Box<Hitable>> {
   let light = Rc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(15.0, 15.0, 15.0)) });
 
   vec![
-    Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }),
+    Box::new(FlipNormals { hitable: Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }) }),
     Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: red }),
     Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: light }),
     Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Rc::clone(&white) }),
-    Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Rc::clone(&white) }),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
     Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
     Box::new(new_box(Vec3::new(130.0, 0.0, 65.0), Vec3::new(295.0, 165.0, 230.0), Rc::clone(&white))),
     Box::new(new_box(Vec3::new(265.0, 0.0, 295.0), Vec3::new(430.0, 330.0, 460.0), Rc::clone(&white))),

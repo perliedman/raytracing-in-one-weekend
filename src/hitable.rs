@@ -179,7 +179,7 @@ impl Hitable for XzRect {
       t,
       material: &*self.material,
       p: r.point_at_parameter(t),
-      normal: Vec3::new(0.0, 0.0, 1.0)
+      normal: Vec3::new(0.0, 1.0, 0.0)
     })
   }
 }
@@ -219,7 +219,7 @@ impl Hitable for YzRect {
       t,
       material: &*self.material,
       p: r.point_at_parameter(t),
-      normal: Vec3::new(0.0, 0.0, 1.0)
+      normal: Vec3::new(1.0, 0.0, 0.0)
     })
   }
 }

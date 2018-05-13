@@ -5,6 +5,7 @@ use std::rc::Rc;
 use ::material::{Material, HitRecord};
 
 use ::vec3::{Vec3};
+use ::mat44::Mat44;
 use ::ray::Ray;
 use ::aabb::{Aabb, surrounding_box};
 
@@ -253,4 +254,70 @@ pub fn new_box(p0: Vec3, p1: Vec3, material: Rc<Material>) -> Vec<Box<Hitable>> 
     Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p1.x(), material: Rc::clone(&material)}),
     Box::new(FlipNormals { hitable: Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p0.x(), material: Rc::clone(&material)}) }),
   ]
+}
+
+pub struct Transform {
+  pub hitable: Box<Hitable>,
+  pub transform: Mat44,
+  inverse_transform: Mat44
+}
+
+impl Transform {
+  pub fn new(hitable: Box<Hitable>, transform: Mat44) -> Transform {
+    Transform {
+      hitable,
+      transform,
+      inverse_transform: transform.inverse()
+    }
+  }
+}
+
+impl Hitable for Transform {
+  fn bounding_box(&self) -> Option<Aabb> {
+    match self.hitable.bounding_box() {
+      Some(bbox) => {
+        let mut min = Vec3::new(f32::MAX, f32::MAX, f32::MAX);
+        let mut max = Vec3::new(f32::MIN, f32::MIN, f32::MIN);
+
+        for i in 0..2 {
+          for j in 0..2 {
+            for k in 0..2 {
+              let v = self.inverse_transform * Vec3::new(
+                (i as f32) * bbox.max.x() + ((1 - i) as f32) * bbox.min.x(),
+                (j as f32) * bbox.max.y() + ((1 - j) as f32) * bbox.min.y(),
+                (k as f32) * bbox.max.z() + ((1 - k) as f32) * bbox.min.z());
+
+              for c in 0..3 {
+                if v[c] < min[c] {
+                  min[c] = v[c];
+                }
+                if v[c] > max[c] {
+                  max[c] = v[c];
+                }
+              }
+            }
+          }
+        }
+
+        return Some(Aabb { min, max })
+      },
+      None => None
+    }
+  }
+
+  fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
+    let transformed_r = Ray {
+      origin: self.transform * r.origin, 
+      direction: self.transform.mul_as_33(r.direction)
+    };
+
+    match self.hitable.hit(&transformed_r, tmin, tmax) {
+      Some(mut hit) => {
+        hit.p = self.inverse_transform * hit.p;
+        hit.normal = self.inverse_transform.mul_as_33(hit.normal);
+        Some(hit)
+      },
+      None => None
+    }
+  }
 }

@@ -179,6 +179,12 @@ impl Index<usize> for Vec3 {
   }
 }
 
+impl IndexMut<usize> for Vec3 {
+  fn index_mut(&mut self, i: usize) -> &mut f32 {
+    &mut self.e[i]
+  }
+}
+
 pub fn unit_vector(v: Vec3) -> Vec3 {
   v / v.length()
 }

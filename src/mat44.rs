@@ -1,16 +1,93 @@
+use std::f32;
 use std::ops::*;
-use ::vec3::Vec3;
+use ::vec3::{Vec3, unit_vector};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Mat44([[f32; 4]; 4]);
 
 impl Mat44 {
-  fn translate(x: f32, y: f32, z: f32) {
+  pub fn identity() -> Mat44 {
     Mat44([
-      [0.0, 0.0, 0.0, x],
-      [0.0, 0.0, 0.0, y],
-      [0.0, 0.0, 0.0, z],
-      [0.0, 0.0, 0.0, 0.0]])
+      [1.0, 0.0, 0.0, 0.0],
+      [0.0, 1.0, 0.0, 0.0],
+      [0.0, 0.0, 1.0, 0.0],
+      [0.0, 0.0, 0.0, 1.0]])
+  }
+
+  pub fn translate(displacement: Vec3) -> Mat44 {
+    Mat44([
+      [1.0, 0.0, 0.0, -displacement.x()],
+      [0.0, 1.0, 0.0, -displacement.y()],
+      [0.0, 0.0, 1.0, -displacement.z()],
+      [0.0, 0.0, 0.0, 1.0]])
+  }
+
+  pub fn rotate(angle: f32, axis: Vec3) -> Mat44 {
+    let ax = unit_vector(axis);
+    let radians = angle * f32::consts::PI / 180.0;
+    let s = radians.sin();
+    let c = radians.cos();
+    let t = 1.0 - c;
+
+    Mat44([
+      [t * ax[0] * ax[0] + c, t * ax[0] * ax[1] + s * ax[2], t * ax[0] * ax[2] - s * ax[1], 0.0],
+      [t * ax[1] * ax[0] - s * ax[2], t * ax[1] * ax[1] + c, t * ax[1] * ax[2] + s * ax[0], 0.0],
+      [t * ax[2] * ax[0] + s * ax[1], t * ax[2] * ax[1] - s * ax[0], t * ax[2] * ax[2] + c, 0.0],
+      [0.0, 0.0, 0.0, 1.0]])
+  }
+
+  pub fn inverse(&self) -> Mat44 {
+    let mut dst = Mat44::identity();
+    let mut tmp = self.clone();
+
+    for i in 0..4 {
+      let mut val = tmp.0[i][i];
+      let mut ind = i;
+      for j in i+1..4 {
+        if tmp.0[i][j].abs() > val.abs() {
+          ind = j;
+          val = tmp.0[i][j];
+        }
+      }
+
+      if ind != i {
+        // Swap columns
+        for j in 0..4 {
+          dst.0[j].swap(i, ind);
+          tmp.0[j].swap(i, ind);
+        }
+      }
+
+      if val.abs() < 1e-6 {
+        panic!("Singular matrix, no inverse");
+      }
+
+      let ival = 1.0 / val;
+      for j in 0..4 {
+        tmp.0[j][i] *= ival;
+        dst.0[j][i] *= ival;
+      }
+
+      for j in 0..4 {
+        if j == i { continue; }
+
+        val = tmp.0[i][j];
+        for k in 0..4 {
+          tmp.0[k][j] -= tmp.0[k][i] * val;
+          dst.0[k][j] -= dst.0[k][i] * val;
+        }        
+      }
+    }
+
+    dst
+  }
+
+  pub fn mul_as_33(&self, other: Vec3) -> Vec3 {
+    Vec3 { e: [
+      self.0[0][0] * other.e[0] + self.0[0][1] * other.e[1] + self.0[0][2] * other.e[2],
+      self.0[1][0] * other.e[0] + self.0[1][1] * other.e[1] + self.0[1][2] * other.e[2],
+      self.0[2][0] * other.e[0] + self.0[2][1] * other.e[1] + self.0[2][2] * other.e[2]]
+    }
   }
 }
 

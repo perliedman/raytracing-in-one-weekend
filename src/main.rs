@@ -5,6 +5,7 @@ use std::f32;
 use std::rc::Rc;
 
 mod vec3;
+mod mat44;
 mod ray;
 mod hitable;
 mod bvh;
@@ -18,6 +19,7 @@ use std::io::BufWriter;
 use png::HasParameters;
 
 use vec3::{Vec3, unit_vector};
+use mat44::Mat44;
 use ray::Ray;
 use hitable::*;
 use material::*;
@@ -28,7 +30,7 @@ use bvh::BvhTree;
 fn main() {
   let nx = 320;
   let ny = 320;
-  let ns = 500;
+  let ns = 100;
 
   // let pixels = render_random(nx, ny, ns);
   let pixels = render_cornell(nx, ny, ns);
@@ -76,13 +78,14 @@ fn render_cornell(nx: usize, ny: usize, ns: usize) -> Vec<u8> {
     lookfrom,
     lookat,
     Vec3::new(0.0, 1.0, 0.0),
-    50.0,
+    38.0,
     (nx as f32) / (ny as f32),
     0.0,
     dist_to_focus);
 
   let mut world = cornell_box();
   let bvh = BvhTree::new(world.as_mut());
+  // eprintln!("{:?}", bvh);
   let scene = Scene {
     model: &bvh,
     environment: &void
@@ -154,8 +157,14 @@ fn cornell_box() -> Vec<Box<Hitable>> {
     Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Rc::clone(&white) }),
     Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
     Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
-    Box::new(new_box(Vec3::new(130.0, 0.0, 65.0), Vec3::new(295.0, 165.0, 230.0), Rc::clone(&white))),
-    Box::new(new_box(Vec3::new(265.0, 0.0, 295.0), Vec3::new(430.0, 330.0, 460.0), Rc::clone(&white))),
+    Box::new(Transform::new(
+      Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 165.0, 165.0), Rc::clone(&white))),
+      Mat44::translate(Vec3::new(130.0, 0.0, 65.0)) * Mat44::rotate(-18.0, Vec3::new(0.0, 1.0, 0.0))
+    )),
+    Box::new(Transform::new(
+      Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 330.0, 165.0), Rc::clone(&white))),
+      Mat44::translate(Vec3::new(265.0, 0.0, 295.0)) * Mat44::rotate(15.0, Vec3::new(0.0, 1.0, 0.0))
+    )),
   ]
 }
 

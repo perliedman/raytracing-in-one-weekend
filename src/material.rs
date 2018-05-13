@@ -146,6 +146,19 @@ impl Material for DiffuseLight {
   }
 }
 
+pub struct Isotropic {
+  pub albedo: Box<Texture>
+}
+
+impl Material for Isotropic {
+  fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<Scatter> {
+    Some(Scatter {
+      color: self.albedo.value(rec.u, rec.v, rec.p),
+      ray: Some(Ray::new(rec.p, random_in_unit_sphere()))
+    })
+  }
+}
+
 fn random_in_unit_sphere() -> Vec3 {
   loop {
     let p = 2.0 * Vec3::new(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>()) - Vec3::new(1.0, 1.0, 1.0);

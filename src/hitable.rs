@@ -1,3 +1,5 @@
+extern crate rand;
+
 use std::f32;
 use std::fmt;
 use std::rc::Rc;
@@ -319,5 +321,66 @@ impl Hitable for Transform {
       },
       None => None
     }
+  }
+}
+
+pub struct ConstantMedium {
+  boundary: Box<Hitable>,
+  density: f32,
+  phase_function: Isotropic
+}
+
+impl ConstantMedium {
+  pub fn new(boundary: Box<Hitable>, density: f32, a: Texture) -> ConstantMedium {
+    ConstantMedium {
+      boundary,
+      density,
+      phase_function: Isotropic { albedo: a }
+    }
+  }
+}
+
+impl Hitable for ConstantMedium {
+  fn bounding_box(&self) -> Option<Aabb> {
+    self.boundary.bounding_box()
+  }
+
+  fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
+    if let Some(mut hit1) = self.boundary.hit(r, -(f32::MAX), f32::MAX) {
+      if let Some(mut hit2) = self.boundary.hit(r, hit1.t + 1e-4, f32::MAX) {
+        if hit1.t < tmin {
+          hit1.t = tmin;
+        }
+
+        if hit2.t > tmax {
+          hit2.t = tmax;
+        }
+
+        if hit1.t > hit2.t {
+          return None;
+        }
+
+        if hit1.t < 0.0 {
+          hit1.t = 0.0;
+        }
+
+        let distance_inside_boundary = (hit2.t - hit1.t) * r.direction.length();
+        let hit_distance = (-1.0 / self.density) * rand::random::<f32>().ln();
+
+        if hit_distance < distance_inside_boundary {
+          let t = hit1.t + hit_distance / r.direction.length();
+          return Some(HitRecord {
+            t,
+            p: r.point_at_parameter(t),
+            normal: Vec3::new(1.0, 0.0, 0.0), // Arbitrary
+            material: &self.phase_function,
+            u: 0.0,
+            v: 0.0
+          })
+        }
+      }
+    }
+
+    None
   }
 }

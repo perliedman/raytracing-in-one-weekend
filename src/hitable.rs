@@ -4,7 +4,7 @@ use std::f32;
 use std::fmt;
 use std::rc::Rc;
 
-use ::material::{Material, HitRecord};
+use ::material::{Material, HitRecord, Isotropic, Texture};
 
 use ::vec3::{Vec3};
 use ::mat44::Mat44;
@@ -331,7 +331,7 @@ pub struct ConstantMedium {
 }
 
 impl ConstantMedium {
-  pub fn new(boundary: Box<Hitable>, density: f32, a: Texture) -> ConstantMedium {
+  pub fn new(boundary: Box<Hitable>, density: f32, a: Box<Texture>) -> ConstantMedium {
     ConstantMedium {
       boundary,
       density,

@@ -153,7 +153,7 @@ pub struct Isotropic {
 impl Material for Isotropic {
   fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<Scatter> {
     Some(Scatter {
-      color: self.albedo.value(rec.u, rec.v, rec.p),
+      color: self.albedo.value(rec.u, rec.v, &rec.p),
       ray: Some(Ray::new(rec.p, random_in_unit_sphere()))
     })
   }

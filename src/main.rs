@@ -181,28 +181,35 @@ fn cornell_box() -> Vec<Box<Hitable>> {
   let red = Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.65, 0.05, 0.05)) });
   let white: Rc<Material> = Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) });
   let green = Rc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.12, 0.45, 0.15)) });
-  let light = Rc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(7.0, 7.0, 7.0)) });
+  let light = Rc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(15.0, 15.0, 15.0)) });
+  let dielectric: Rc<Material> = Rc::new(Dielectric { ref_idx: 1.8 });
+  let subsurface: Vec<Box<Hitable>> = vec![
+    Box::new(Sphere {center: Vec3::new(0.0, 0.0, 0.0), radius: 60.0, material: Rc::clone(&dielectric) }),
+    Box::new(ConstantMedium::new(
+      Box::new(Sphere {center: Vec3::new(0.0, 0.0, 0.0), radius: 60.0, material: Rc::clone(&white) }),
+      0.2,
+      Box::new(ConstantTexture::new(0.2, 0.4, 0.9))))
+  ];
 
   vec![
     Box::new(FlipNormals { hitable: Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }) }),
     Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: red }),
-    Box::new(XzRect { x0: 113.0, x1: 443.0, z0: 127.0, z1: 432.0, k: 554.0, material: light }),
+    Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: light }),
     Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Rc::clone(&white) }),
     Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
     Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Rc::clone(&white) }) }),
     Box::new(Transform::new(
-      Box::new(ConstantMedium::new(
-        Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 165.0, 165.0), Rc::clone(&white))),
-        0.01,
-        Box::new(ConstantTexture::new(1.0, 1.0, 1.0)))),
+      Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 165.0, 165.0), Rc::clone(&white))),
       Mat44::translate(Vec3::new(130.0, 0.0, 65.0)) * Mat44::rotate(-18.0, Vec3::new(0.0, 1.0, 0.0))
     )),
     Box::new(Transform::new(
-      Box::new(ConstantMedium::new(
-        Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 330.0, 165.0), Rc::clone(&white))),
-        0.01,
-        Box::new(ConstantTexture::new(0.0, 0.0, 0.0)))),
+      Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 330.0, 165.0), Rc::clone(&white))),
       Mat44::translate(Vec3::new(265.0, 0.0, 295.0)) * Mat44::rotate(15.0, Vec3::new(0.0, 1.0, 0.0))
+    )),
+    Box::new(Transform::new(
+      Box::new(subsurface),
+      Mat44::translate(Vec3::new(130.0, 225.0, 65.0)) * Mat44::rotate(-18.0, Vec3::new(0.0, 1.0, 0.0)) *
+      Mat44::translate(Vec3::new(82.5, 0.0, 82.5))
     )),
   ]
 }

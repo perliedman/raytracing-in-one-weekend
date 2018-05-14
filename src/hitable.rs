@@ -79,8 +79,23 @@ impl Hitable for Sphere {
     let discriminant = b * b - a * c;
 
     if discriminant > 0. {
-      let t = (-b - discriminant.sqrt()) / a;
+      let mut t = (-b - discriminant.sqrt()) / a;
 
+      if t < tmax && t > tmin {
+        let p = r.point_at_parameter(t);
+
+        return Some(HitRecord {
+          t,
+          p,
+          normal: (p - self.center) / self.radius,
+          material: &*self.material,
+          // TODO: texture coords
+          u: 0.0,
+          v: 0.0
+        });
+      }
+
+      t = (-b + discriminant.sqrt()) / a;
       if t < tmax && t > tmin {
         let p = r.point_at_parameter(t);
 

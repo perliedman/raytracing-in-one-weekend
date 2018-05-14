@@ -1,8 +1,11 @@
+extern crate clap;
 extern crate rand;
 extern crate png;
 
 use std::f32;
+use std::fs::File;
 use std::rc::Rc;
+use clap::{App, Arg};
 
 mod vec3;
 mod mat44;
@@ -14,7 +17,6 @@ mod renderer;
 mod aabb;
 mod material;
 
-use std::io;
 use std::io::BufWriter;
 use png::HasParameters;
 
@@ -28,14 +30,45 @@ use renderer::*;
 use bvh::BvhTree;
 
 fn main() {
-  let nx = 320;
-  let ny = 320;
-  let ns = 100;
+  let matches = App::new("plrt")
+    .author("Per Liedman <per@liedman.net>")
+    .about("Ray Tracer built from the book Ray Tracing in one weekend")
+    .arg(Arg::with_name("output")
+      .short("o")
+      .long("output")
+      .value_name("FILE")
+      .help("image destination file")
+      .takes_value(true))
+    .arg(Arg::with_name("width")
+      .short("w")
+      .long("width")
+      .value_name("WIDTH")
+      .help("image width in pixels")
+      .takes_value(true))
+    .arg(Arg::with_name("height")
+      .short("h")
+      .long("height")
+      .value_name("HEIGHT")
+      .help("image height in pixels")
+      .takes_value(true))
+    .arg(Arg::with_name("samples")
+      .short("s")
+      .long("samples")
+      .value_name("SAMPLES")
+      .help("number of samples per pixel")
+      .takes_value(true))
+    .get_matches();
+
+  let nx = matches.value_of("width").unwrap_or("320").parse::<usize>().unwrap();
+  let ny = matches.value_of("height").unwrap_or("320").parse::<usize>().unwrap();
+  let ns = matches.value_of("samples").unwrap_or("25").parse::<usize>().unwrap();;
 
   // let pixels = render_random(nx, ny, ns);
   let pixels = render_cornell(nx, ny, ns);
 
-  let ref mut w = BufWriter::new(io::stdout());
+  let path = matches.value_of("output").unwrap_or("a.png");
+  let file = File::create(path).unwrap();
+  let ref mut w = BufWriter::new(file);
 
   let mut encoder = png::Encoder::new(w, nx as u32, ny as u32);
   encoder.set(png::ColorType::RGB).set(png::BitDepth::Eight);

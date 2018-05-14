@@ -1,6 +1,8 @@
 extern crate rand;
+extern crate indicatif;
 
 use std::f32;
+use self::indicatif::{ProgressBar, ProgressStyle};
 
 use ::vec3::{Vec3};
 use ray::Ray;
@@ -14,6 +16,10 @@ pub struct Scene<'a> {
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
   let mut pixels: Vec<u8> = Vec::with_capacity(nx * ny * 3);
+  let bar = ProgressBar::new((nx * ny) as u64);
+  bar.set_prefix("🎨  Rendering");
+  bar.set_style(ProgressStyle::default_bar()
+    .template("{prefix:.white} [{eta_precise}] {bar:40.cyan/blue} {percent}%"));
 
   for j in (0..ny).rev() {
     for i in 0..nx {
@@ -33,20 +39,23 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
       pixels.push((255.99 * col[0]).min(255.0) as u8);
       pixels.push((255.99 * col[1]).min(255.0) as u8);
       pixels.push((255.99 * col[2]).min(255.0) as u8);
+
+      bar.inc(1);
     }
   }
+
+  bar.finish();
 
   pixels
 }
 
 fn color(r: &Ray, scene: &Scene, depth: i32) -> Vec3 {
   let hit = scene.model.hit(&r, 0.001, f32::MAX);
-  let mut emitted = Vec3::new(0.0, 0.0, 0.0);
 
   match hit {
     Some(rec) => {
+      let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
       if depth < 50 {
-        emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
         match rec.material.scatter(&r, &rec) {
           Some(scatter) => {
             if let Some(bounce) = scatter.ray {

@@ -21,6 +21,8 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
   bar.set_style(ProgressStyle::default_bar()
     .template("{prefix:.white} [{eta_precise}] {bar:40.cyan/blue} {percent}%"));
 
+  let mut c: u64 = 0;
+
   for j in (0..ny).rev() {
     for i in 0..nx {
       let mut col = Vec3::new(0.0, 0.0, 0.0);
@@ -40,7 +42,10 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
       pixels.push((255.99 * col[1]).min(255.0) as u8);
       pixels.push((255.99 * col[2]).min(255.0) as u8);
 
-      bar.inc(1);
+      c += 1;
+      if c % 50 == 0 {
+        bar.inc(50);
+      }
     }
   }
 

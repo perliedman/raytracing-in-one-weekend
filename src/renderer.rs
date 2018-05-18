@@ -15,7 +15,6 @@ pub struct Scene<'a> {
 }
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
-  let mut pixels: Vec<u8> = Vec::with_capacity(nx * ny * 3);
   let bar = ProgressBar::new((nx * ny) as u64);
   bar.set_prefix("🎨  Rendering");
   bar.set_style(ProgressStyle::default_bar()
@@ -23,8 +22,8 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
 
   let mut c: u64 = 0;
 
-  for j in (0..ny).rev() {
-    for i in 0..nx {
+  let pixels: Vec<u8> = (0..ny).rev().flat_map(|j| {
+    (0..nx).flat_map(move |i| {
       let mut col = Vec3::new(0.0, 0.0, 0.0);
 
       for _s in 0..ns {
@@ -38,16 +37,14 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
       col /= ns as f32;
       col = Vec3::new(col[0].sqrt(), col[1].sqrt(), col[2].sqrt());
 
-      pixels.push((255.99 * col[0]).min(255.0) as u8);
-      pixels.push((255.99 * col[1]).min(255.0) as u8);
-      pixels.push((255.99 * col[2]).min(255.0) as u8);
+      // c += 1;
+      // if c % 50 == 0 {
+      //   bar.inc(50);
+      // }
 
-      c += 1;
-      if c % 50 == 0 {
-        bar.inc(50);
-      }
-    }
-  }
+      (0..3).map(move |k| (255.99 * col[k]).min(255.0) as u8)
+    })
+  }).collect();
 
   bar.finish();
 

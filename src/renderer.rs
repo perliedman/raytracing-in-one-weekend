@@ -6,14 +6,37 @@ use renderer::rayon::prelude::*;
 use std::f32;
 use self::indicatif::{ProgressBar, ProgressStyle};
 
-use ::vec3::{Vec3};
+use ::vec3::{Vec3, unit_vector};
 use ray::Ray;
 use hitable::*;
 use camera::Camera;
 
+
+pub trait SceneEnvironment : Sync {
+  fn color(&self, r: &Ray) -> Vec3;
+}
+
+pub struct SimpleSky { }
+
+impl SceneEnvironment for SimpleSky {
+  fn color(&self, r: &Ray) -> Vec3 {
+    let unit_direction = unit_vector(r.direction);
+    let t = 0.5 * (unit_direction.y() + 1.0);
+    (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
+  }
+}
+
+pub struct Void { }
+
+impl SceneEnvironment for Void {
+  fn color(&self, _r: &Ray) -> Vec3 {
+    Vec3::new(0.0, 0.0, 0.0)
+  }
+}
+
 pub struct Scene<'a> {
   pub model: &'a Hitable,
-  pub environment: &'a Fn(&Ray) -> Vec3
+  pub environment: Box<SceneEnvironment>
 }
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
@@ -31,7 +54,7 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
       let v = ((j as f32) + rand::random::<f32>()) / (ny as f32);
 
       let r = camera.get_ray(u, v);
-      // col += color(&r, *&scene, 0);
+      col += color(&r, *&scene, 0);
     }
 
     col /= ns as f32;
@@ -88,6 +111,6 @@ fn color(r: &Ray, scene: &Scene, depth: i32) -> Vec3 {
 
       return emitted;
     },
-    None => return (scene.environment)(&r)
+    None => return scene.environment.color(&r)
   }
 }

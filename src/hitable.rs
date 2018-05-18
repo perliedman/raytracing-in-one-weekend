@@ -2,7 +2,7 @@ extern crate rand;
 
 use std::f32;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use ::material::{Material, HitRecord, Isotropic, Texture};
 
@@ -11,7 +11,7 @@ use ::mat44::Mat44;
 use ::ray::Ray;
 use ::aabb::{Aabb, surrounding_box};
 
-pub trait Hitable {
+pub trait Hitable : Sync {
   fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord>;
   fn bounding_box(&self) -> Option<Aabb>;
 }
@@ -67,7 +67,7 @@ impl Hitable for Vec<Box<Hitable>> {
 pub struct Sphere {
   pub center: Vec3,
   pub radius: f32,
-  pub material: Rc<Material>
+  pub material: Arc<Material>
 }
 
 impl Hitable for Sphere {
@@ -128,7 +128,7 @@ pub struct XyRect {
   pub y0: f32,
   pub y1: f32,
   pub k: f32,
-  pub material: Rc<Material>
+  pub material: Arc<Material>
 }
 
 impl Hitable for XyRect {
@@ -168,7 +168,7 @@ pub struct XzRect {
   pub z0: f32,
   pub z1: f32,
   pub k: f32,
-  pub material: Rc<Material>
+  pub material: Arc<Material>
 }
 
 impl Hitable for XzRect {
@@ -208,7 +208,7 @@ pub struct YzRect {
   pub z0: f32,
   pub z1: f32,
   pub k: f32,
-  pub material: Rc<Material>
+  pub material: Arc<Material>
 }
 
 impl Hitable for YzRect {
@@ -262,14 +262,14 @@ impl Hitable for FlipNormals {
   }
 }
 
-pub fn new_box(p0: Vec3, p1: Vec3, material: Rc<Material>) -> Vec<Box<Hitable>> {
+pub fn new_box(p0: Vec3, p1: Vec3, material: Arc<Material>) -> Vec<Box<Hitable>> {
   vec![
-    Box::new(XyRect { x0: p0.x(), x1: p1.x(), y0: p0.y(), y1: p1.y(), k: p1.z(), material: Rc::clone(&material)}),
-    Box::new(FlipNormals { hitable: Box::new(XyRect { x0: p0.x(), x1: p1.x(), y0: p0.y(), y1: p1.y(), k: p0.z(), material: Rc::clone(&material)}) }),
-    Box::new(XzRect { x0: p0.x(), x1: p1.x(), z0: p0.z(), z1: p1.z(), k: p1.y(), material: Rc::clone(&material)}),
-    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: p0.x(), x1: p1.x(), z0: p0.z(), z1: p1.z(), k: p0.y(), material: Rc::clone(&material)}) }),
-    Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p1.x(), material: Rc::clone(&material)}),
-    Box::new(FlipNormals { hitable: Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p0.x(), material: Rc::clone(&material)}) }),
+    Box::new(XyRect { x0: p0.x(), x1: p1.x(), y0: p0.y(), y1: p1.y(), k: p1.z(), material: Arc::clone(&material)}),
+    Box::new(FlipNormals { hitable: Box::new(XyRect { x0: p0.x(), x1: p1.x(), y0: p0.y(), y1: p1.y(), k: p0.z(), material: Arc::clone(&material)}) }),
+    Box::new(XzRect { x0: p0.x(), x1: p1.x(), z0: p0.z(), z1: p1.z(), k: p1.y(), material: Arc::clone(&material)}),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: p0.x(), x1: p1.x(), z0: p0.z(), z1: p1.z(), k: p0.y(), material: Arc::clone(&material)}) }),
+    Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p1.x(), material: Arc::clone(&material)}),
+    Box::new(FlipNormals { hitable: Box::new(YzRect { y0: p0.y(), y1: p1.y(), z0: p0.z(), z1: p1.z(), k: p0.x(), material: Arc::clone(&material)}) }),
   ]
 }
 

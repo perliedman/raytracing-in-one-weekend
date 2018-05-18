@@ -18,14 +18,14 @@ pub struct Scatter {
   pub ray: Option<Ray>
 }
 
-pub trait Material {
+pub trait Material : Sync + Send {
   fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<Scatter>;
   fn emitted(&self, _u: f32, _v: f32, _p: &Vec3) -> Vec3 {
     Vec3::new(0.0, 0.0, 0.0)
   }
 }
 
-pub trait Texture {
+pub trait Texture : Sync + Send {
   fn value(&self, u: f32, v: f32, p: &Vec3) -> Vec3;
 }
 

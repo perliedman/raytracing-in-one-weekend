@@ -57,14 +57,21 @@ fn main() {
       .value_name("SAMPLES")
       .help("number of samples per pixel")
       .takes_value(true))
+    .arg(Arg::with_name("max_ray_depth")
+      .short("d")
+      .long("max-ray-depth")
+      .value_name("DEPTH")
+      .help("maximum ray depth")
+      .takes_value(true))
     .get_matches();
 
   let nx = matches.value_of("width").unwrap_or("320").parse::<usize>().unwrap();
   let ny = matches.value_of("height").unwrap_or("320").parse::<usize>().unwrap();
   let ns = matches.value_of("samples").unwrap_or("25").parse::<usize>().unwrap();;
+  let max_ray_depth = matches.value_of("max_ray_depth").unwrap_or("10").parse::<i32>().unwrap();;
 
   // let pixels = render_random(nx, ny, ns);
-  let pixels = render_cornell(nx, ny, ns);
+  let pixels = render_cornell(nx, ny, ns, max_ray_depth);
 
   let path = matches.value_of("output").unwrap_or("a.png");
   let file = File::create(path).unwrap();
@@ -77,7 +84,7 @@ fn main() {
   writer.write_image_data(&pixels).unwrap();
 }
 
-fn render_random(nx: usize, ny: usize, ns: usize) -> Vec<u8> {
+fn render_random(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
   let lookfrom = Vec3::new(10.0, 1.8, 2.4);
   let lookat = Vec3::new(0.0, 0.0, 0.5);
   let dist_to_focus = (lookfrom-Vec3::new(4.0, 1.0, 0.0)).length();
@@ -95,14 +102,14 @@ fn render_random(nx: usize, ny: usize, ns: usize) -> Vec<u8> {
   let bvh = BvhTree::new(world.as_mut());
   let scene = Scene {
     model: &bvh,
-    environment: Box::new(Void {})
-    // environment: &simple_sky
+    environment: Box::new(Void {}),
+    max_ray_depth
   };
 
   render(&scene, &camera, nx, ny, ns)
 }
 
-fn render_cornell(nx: usize, ny: usize, ns: usize) -> Vec<u8> {
+fn render_cornell(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
   let lookfrom = Vec3::new(278.0, 278.0, -800.0);
   let lookat = Vec3::new(278.0, 278.0, 0.0);
   let dist_to_focus = 10.0;
@@ -121,7 +128,8 @@ fn render_cornell(nx: usize, ny: usize, ns: usize) -> Vec<u8> {
   // eprintln!("{:?}", bvh);
   let scene = Scene {
     model: &bvh,
-    environment: Box::new(Void {})
+    environment: Box::new(Void {}),
+    max_ray_depth
   };
 
   render(&scene, &camera, nx, ny, ns)

@@ -36,7 +36,8 @@ impl SceneEnvironment for Void {
 
 pub struct Scene<'a> {
   pub model: &'a Hitable,
-  pub environment: Box<SceneEnvironment>
+  pub environment: Box<SceneEnvironment>,
+  pub max_ray_depth: i32
 }
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
@@ -75,7 +76,7 @@ fn color(r: &Ray, scene: &Scene, depth: i32) -> Vec3 {
   match hit {
     Some(rec) => {
       let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
-      if depth < 50 {
+      if depth < scene.max_ray_depth {
         match rec.material.scatter(&r, &rec) {
           Some(scatter) => {
             if let Some(bounce) = scatter.ray {

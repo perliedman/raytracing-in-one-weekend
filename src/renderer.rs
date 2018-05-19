@@ -40,12 +40,10 @@ pub struct Scene<'a> {
 }
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
-  let bar = ProgressBar::new((nx * ny) as u64);
+  let bar = &Box::new(ProgressBar::new((nx * ny / 64) as u64));
   bar.set_prefix("🎨  Rendering");
   bar.set_style(ProgressStyle::default_bar()
     .template("{prefix:.white} [{eta_precise}] {bar:40.cyan/blue} {percent}%"));
-
-  let mut c: u64 = 0;
 
   let pixels = (0..ny).into_par_iter().rev().flat_map(|j| (0..nx).into_par_iter().flat_map(move |i| {
     let mut col = Vec3::new(0.0, 0.0, 0.0);
@@ -55,6 +53,10 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
 
       let r = camera.get_ray(u, v);
       col += color(&r, *&scene, 0);
+    }
+
+    if i % 64 == 0 {
+      bar.inc(1);
     }
 
     col /= ns as f32;

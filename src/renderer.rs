@@ -4,7 +4,8 @@ extern crate indicatif;
 
 use renderer::rayon::prelude::*;
 use std::f32;
-use self::indicatif::{ProgressBar, ProgressStyle};
+use std::time::{Instant};
+use self::indicatif::{ProgressBar, ProgressStyle, HumanDuration};
 
 use ::vec3::{Vec3, unit_vector};
 use ray::Ray;
@@ -46,6 +47,8 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
   bar.set_style(ProgressStyle::default_bar()
     .template("{prefix:.white} [{eta_precise}] {bar:40.cyan/blue} {percent}%"));
 
+  let start = Instant::now();
+
   let pixels = (0..ny).into_par_iter().rev().flat_map(|j| (0..nx).into_par_iter().flat_map(move |i| {
     let mut col = Vec3::new(0.0, 0.0, 0.0);
     for _s in 0..ns {
@@ -66,6 +69,8 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
   })).collect();
 
   bar.finish();
+
+  println!("Finished in {}", HumanDuration(start.elapsed()));
 
   pixels
 }

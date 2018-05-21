@@ -1,5 +1,6 @@
 extern crate rand;
 use rand::Rng;
+use std::fmt;
 use std::cmp::Ordering;
 
 use ::aabb::{Aabb, surrounding_box};
@@ -7,7 +8,6 @@ use ::ray::Ray;
 use ::material::HitRecord;
 use ::hitable::Hitable;
 
-#[derive(Debug)]
 pub struct BvhTree<'a> {
   nodes: Vec<BvhNode<'a>>,
   root: NodeId
@@ -144,6 +144,21 @@ impl<'a> BvhTree<'a> {
     });
 
     return NodeId { index: next_index };
+  }
+
+  fn number_hittables(&self, id: NodeId) -> usize {
+    let node = &self.nodes[id.index];
+    let local_hitable = if node.hitable.is_some() { 1 } else { 0 };
+    let count_left = if let Some(left_index) = node.left { self.number_hittables(left_index) } else { 0 };
+    let count_right = if let Some(right_index) = node.right { self.number_hittables(right_index) } else { 0 };
+
+    local_hitable + count_left + count_right
+  }
+}
+
+impl<'a> fmt::Display for BvhTree<'a> { 
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "BVH with {:?} hitables and {:?} nodes", self.number_hittables(self.root), self.nodes.len())
   }
 }
 

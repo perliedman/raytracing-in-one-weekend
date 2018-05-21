@@ -82,6 +82,7 @@ fn main() {
   let mut writer = encoder.write_header().unwrap();
 
   writer.write_image_data(&pixels).unwrap();
+  println!("Image written to {:?}", path);
 }
 
 fn render_random(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
@@ -125,7 +126,7 @@ fn render_cornell(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8
 
   let mut world = cornell_box();
   let bvh = BvhTree::new(world.as_mut());
-  // eprintln!("{:?}", bvh);
+  println!("{}", bvh);
   let scene = Scene {
     model: &bvh,
     environment: Box::new(Void {}),
@@ -200,6 +201,10 @@ fn cornell_box() -> Vec<Box<Hitable>> {
   ];
 
   vec![
+    Box::new(ConstantMedium::new(
+      Box::new(Sphere {center: Vec3::new(0.0, 0.0, 0.0), radius: 6000.0, material: Arc::clone(&white) }),
+      0.0001,
+      Box::new(ConstantTexture::new(1., 1., 1.)))),
     Box::new(FlipNormals { hitable: Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }) }),
     Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: red }),
     Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: light }),

@@ -16,6 +16,7 @@ mod camera;
 mod renderer;
 mod aabb;
 mod material;
+mod triangles;
 
 use std::io::BufWriter;
 use png::HasParameters;
@@ -28,6 +29,7 @@ use material::*;
 use camera::Camera;
 use renderer::*;
 use bvh::BvhTree;
+use triangles::*;
 
 fn main() {
   let matches = App::new("plrt")
@@ -189,7 +191,7 @@ fn random_scene() -> Vec<Box<Hitable>> {
 fn cornell_box() -> Vec<Box<Hitable>> {
   let red = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.65, 0.05, 0.05)) });
   let white: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) });
-  let green = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.12, 0.45, 0.15)) });
+  let green: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.12, 0.45, 0.15)) });
   let light = Arc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(15.0, 15.0, 15.0)) });
   let dielectric: Arc<Material> = Arc::new(Dielectric { ref_idx: 1.8 });
   let subsurface: Vec<Box<Hitable>> = vec![
@@ -201,10 +203,7 @@ fn cornell_box() -> Vec<Box<Hitable>> {
   ];
 
   vec![
-    Box::new(ConstantMedium::new(
-      Box::new(Sphere {center: Vec3::new(0.0, 0.0, 0.0), radius: 6000.0, material: Arc::clone(&white) }),
-      0.0001,
-      Box::new(ConstantTexture::new(1., 1., 1.)))),
+    Box::new(Triangle::new(Vec3::new(230., 425., 165.), Vec3::new(50., 305., 185.), Vec3::new(330., 285., 195.), Arc::clone(&green))),
     Box::new(FlipNormals { hitable: Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }) }),
     Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: red }),
     Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: light }),

@@ -108,27 +108,9 @@ fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) 
   let mut world: Vec<Box<Hitable>> = Vec::new();
 
   let mat: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.6, 0.6, 0.6)) });
-  // let mat: Arc<Material> = Arc::new(Metal {
-  //   albedo: Vec3::new(
-  //     0.5 * (1.0 + rand::random::<f32>()),
-  //     0.5 * (1.0 + rand::random::<f32>()),
-  //     0.5 * (1.0 + rand::random::<f32>())),
-  //   fuzz: 0.5 * rand::random::<f32>(),
-  // });
-  // world.push(Box::new(Triangle::new(
-  //   Vec3::new(0., -1., 0.05), 
-  //   Vec3::new(-1., -1., -0.6), 
-  //   Vec3::new(0., 0., 0.6), 
-  //   Arc::clone(&mat))));
-  // world.push(Box::new(Triangle::new(
-  //   Vec3::new(0., -1., 0.05), 
-  //   Vec3::new(1., -1., -0.6), 
-  //   Vec3::new(0., 0., 0.6), 
-  //   Arc::clone(&mat))));
 
-  for (_, m) in models.iter().enumerate() {
+  for m in models.iter() {
     let mesh = &m.mesh;
-    // eprintln!("{:?}", mesh.indices);
     for f in 0..mesh.indices.len() / 3 {
       let i0 = mesh.indices[3 * f] as usize;
       let i1 = mesh.indices[3 * f + 1] as usize;
@@ -136,8 +118,16 @@ fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) 
       let v0 = Vec3::new(mesh.positions[i0 * 3], mesh.positions[i0 * 3 + 1], mesh.positions[i0 * 3 + 2]);
       let v1 = Vec3::new(mesh.positions[i1 * 3], mesh.positions[i1 * 3 + 1], mesh.positions[i1 * 3 + 2]);
       let v2 = Vec3::new(mesh.positions[i2 * 3], mesh.positions[i2 * 3 + 1], mesh.positions[i2 * 3 + 2]);
-      // eprintln!("{:?} {:?} {:?} => {:?} {:?} {:?}", i0, i1, i2, v0, v1, v2);
-      world.push(Box::new(Triangle::new(v0, v1, v2, Arc::clone(&mat))))
+
+      let tri: Triangle;
+      if mesh.normals.len() > 0 {
+        let normal = Vec3::new(mesh.normals[i0 * 3], mesh.normals[i0 * 3 + 1], mesh.normals[i0 * 3 + 2]);
+        tri = Triangle::new_with_normal(v0, v1, v2, normal, Arc::clone(&mat))
+      } else {
+        tri = Triangle::new(v0, v1, v2, Arc::clone(&mat));
+      }
+
+      world.push(Box::new(tri));
     }
   }
 
@@ -148,10 +138,8 @@ fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) 
     (bbox.max[0] + bbox.min[0]) / 2.,
     (bbox.max[1] + bbox.min[1]) / 2.,
     (bbox.max[2] + bbox.min[2]) / 2.);
-  let lookfrom = Vec3::new(lookat[0], lookat[1], lookat[2] + (bbox.max[2] - bbox.min[2]) * 3.);
+  let lookfrom = Vec3::new(lookat[0], lookat[1], lookat[2] + (bbox.max[2] - bbox.min[2]) * 1.);
   let dist_to_focus = (lookfrom-lookat).length();
-
-  eprintln!("{:?} -> {:?}", lookfrom, lookat);
 
   let camera = Camera::new(
     lookfrom,
@@ -159,7 +147,7 @@ fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) 
     Vec3::new(0.0, 1.0, 0.0),
     45.0,
     (nx as f32) / (ny as f32),
-    0.1,
+    1.,
     dist_to_focus);
 
   render(&scene, &camera, nx, ny, ns)

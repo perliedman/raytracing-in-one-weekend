@@ -65,6 +65,11 @@ impl Hitable for Triangle {
     }
 
     let t = v0v2.dot(qvec) * inv_det;
+
+    if t < tmin || t > tmax {
+      return None
+    }
+
     let p = r.point_at_parameter(t);
 
     return Some(HitRecord {

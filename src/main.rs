@@ -1,6 +1,7 @@
 extern crate clap;
 extern crate rand;
 extern crate png;
+extern crate tobj;
 
 use std::f32;
 use std::fs::File;
@@ -17,9 +18,12 @@ mod renderer;
 mod aabb;
 mod material;
 mod triangles;
+mod scene;
 
+use std::path::Path;
 use std::io::BufWriter;
 use png::HasParameters;
+use tobj::load_obj;
 
 use vec3::{Vec3, unit_vector};
 use mat44::Mat44;
@@ -30,6 +34,7 @@ use camera::Camera;
 use renderer::*;
 use bvh::BvhTree;
 use triangles::*;
+use scene::*;
 
 fn main() {
   let matches = App::new("plrt")
@@ -65,6 +70,11 @@ fn main() {
       .value_name("DEPTH")
       .help("maximum ray depth")
       .takes_value(true))
+    .arg(Arg::with_name("obj_model")
+      .long("obj-model")
+      .value_name("PATH")
+      .help("Wavefront OBJ model file path")
+      .takes_value(true))
     .get_matches();
 
   let nx = matches.value_of("width").unwrap_or("320").parse::<usize>().unwrap();
@@ -72,8 +82,13 @@ fn main() {
   let ns = matches.value_of("samples").unwrap_or("25").parse::<usize>().unwrap();;
   let max_ray_depth = matches.value_of("max_ray_depth").unwrap_or("10").parse::<i32>().unwrap();;
 
-  // let pixels = render_random(nx, ny, ns);
-  let pixels = render_cornell(nx, ny, ns, max_ray_depth);
+  let pixels: Vec<u8>;
+  if let Some(obj_path) = matches.value_of("obj_model") {
+    pixels = render_obj(&Path::new(obj_path), nx, ny, ns, max_ray_depth);
+  } else {
+    pixels = render_random(nx, ny, ns, max_ray_depth);
+    // pixels = render_cornell(nx, ny, ns, max_ray_depth);
+  }
 
   let path = matches.value_of("output").unwrap_or("a.png");
   let file = File::create(path).unwrap();
@@ -85,6 +100,69 @@ fn main() {
 
   writer.write_image_data(&pixels).unwrap();
   println!("Image written to {:?}", path);
+}
+
+fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
+  let obj = tobj::load_obj(path);
+  let (models, materials) = obj.unwrap();
+  let mut world: Vec<Box<Hitable>> = Vec::new();
+
+  let mat: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.6, 0.6, 0.6)) });
+  // let mat: Arc<Material> = Arc::new(Metal {
+  //   albedo: Vec3::new(
+  //     0.5 * (1.0 + rand::random::<f32>()),
+  //     0.5 * (1.0 + rand::random::<f32>()),
+  //     0.5 * (1.0 + rand::random::<f32>())),
+  //   fuzz: 0.5 * rand::random::<f32>(),
+  // });
+  // world.push(Box::new(Triangle::new(
+  //   Vec3::new(0., -1., 0.05), 
+  //   Vec3::new(-1., -1., -0.6), 
+  //   Vec3::new(0., 0., 0.6), 
+  //   Arc::clone(&mat))));
+  // world.push(Box::new(Triangle::new(
+  //   Vec3::new(0., -1., 0.05), 
+  //   Vec3::new(1., -1., -0.6), 
+  //   Vec3::new(0., 0., 0.6), 
+  //   Arc::clone(&mat))));
+
+  for (_, m) in models.iter().enumerate() {
+    let mesh = &m.mesh;
+    // eprintln!("{:?}", mesh.indices);
+    for f in 0..mesh.indices.len() / 3 {
+      let i0 = mesh.indices[3 * f] as usize;
+      let i1 = mesh.indices[3 * f + 1] as usize;
+      let i2 = mesh.indices[3 * f + 2] as usize;
+      let v0 = Vec3::new(mesh.positions[i0 * 3], mesh.positions[i0 * 3 + 1], mesh.positions[i0 * 3 + 2]);
+      let v1 = Vec3::new(mesh.positions[i1 * 3], mesh.positions[i1 * 3 + 1], mesh.positions[i1 * 3 + 2]);
+      let v2 = Vec3::new(mesh.positions[i2 * 3], mesh.positions[i2 * 3 + 1], mesh.positions[i2 * 3 + 2]);
+      // eprintln!("{:?} {:?} {:?} => {:?} {:?} {:?}", i0, i1, i2, v0, v1, v2);
+      world.push(Box::new(Triangle::new(v0, v1, v2, Arc::clone(&mat))))
+    }
+  }
+
+  let scene = Scene::new(&mut world, Box::new(SimpleSky {}), max_ray_depth);
+  let bbox = scene.bvh.bounding_box().unwrap();
+
+  let lookat = Vec3::new(
+    (bbox.max[0] + bbox.min[0]) / 2.,
+    (bbox.max[1] + bbox.min[1]) / 2.,
+    (bbox.max[2] + bbox.min[2]) / 2.);
+  let lookfrom = Vec3::new(lookat[0], lookat[1], lookat[2] + (bbox.max[2] - bbox.min[2]) * 3.);
+  let dist_to_focus = (lookfrom-lookat).length();
+
+  eprintln!("{:?} -> {:?}", lookfrom, lookat);
+
+  let camera = Camera::new(
+    lookfrom,
+    lookat,
+    Vec3::new(0.0, 1.0, 0.0),
+    45.0,
+    (nx as f32) / (ny as f32),
+    0.1,
+    dist_to_focus);
+
+  render(&scene, &camera, nx, ny, ns)
 }
 
 fn render_random(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
@@ -102,12 +180,7 @@ fn render_random(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8>
     dist_to_focus);
 
   let mut world = random_scene();
-  let bvh = BvhTree::new(world.as_mut());
-  let scene = Scene {
-    model: &bvh,
-    environment: Box::new(Void {}),
-    max_ray_depth
-  };
+  let scene = Scene::new(&mut world, Box::new(SimpleSky {}), max_ray_depth);
 
   render(&scene, &camera, nx, ny, ns)
 }
@@ -127,13 +200,7 @@ fn render_cornell(nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8
     dist_to_focus);
 
   let mut world = cornell_box();
-  let bvh = BvhTree::new(world.as_mut());
-  println!("{}", bvh);
-  let scene = Scene {
-    model: &bvh,
-    environment: Box::new(Void {}),
-    max_ray_depth
-  };
+  let scene = Scene::new(&mut world, Box::new(Void {}), max_ray_depth);
 
   render(&scene, &camera, nx, ny, ns)
 }
@@ -148,7 +215,6 @@ fn random_scene() -> Vec<Box<Hitable>> {
     Box::new(Sphere { center: Vec3::new(0.0, 1.0, 0.0), radius: 1.0, material: Arc::new(Dielectric { ref_idx: 1.5 }) }),
     Box::new(Sphere { center: Vec3::new(-4.0, 1.0, 0.0), radius: 1.0, material: Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.4, 0.2, 0.1)) }) }),
     Box::new(Sphere { center: Vec3::new(4.0, 1.0, 0.0), radius: 1.0, material: Arc::new(Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 }) }),
-    Box::new(XyRect { x0: -12.0, x1: -8.0, y0: 0.0, y1: 2.0, k: 2.0, material: Arc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(0.6*25.0, 0.55*25.0, 0.4*25.0)) }) })
   ];
 
   for a in -11..11 {

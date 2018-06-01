@@ -7,41 +7,17 @@ use std::f32;
 use std::time::{Instant};
 use self::indicatif::{ProgressBar, ProgressStyle, HumanDuration};
 
-use ::vec3::{Vec3, unit_vector};
+use ::vec3::*;
 use ray::Ray;
 use hitable::*;
 use camera::Camera;
-
-
-pub trait SceneEnvironment : Sync {
-  fn color(&self, r: &Ray) -> Vec3;
-}
-
-pub struct SimpleSky { }
-
-impl SceneEnvironment for SimpleSky {
-  fn color(&self, r: &Ray) -> Vec3 {
-    let unit_direction = unit_vector(r.direction);
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
-  }
-}
-
-pub struct Void { }
-
-impl SceneEnvironment for Void {
-  fn color(&self, _r: &Ray) -> Vec3 {
-    Vec3::new(0.0, 0.0, 0.0)
-  }
-}
-
-pub struct Scene<'a> {
-  pub model: &'a Hitable,
-  pub environment: Box<SceneEnvironment>,
-  pub max_ray_depth: i32
-}
+use scene::Scene;
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
+  println!("{}", scene.bvh);
+  println!("{:?}", scene.bvh.bounding_box());
+  println!("{:?}", camera);
+
   let bar = &Box::new(ProgressBar::new((nx * ny / 64) as u64));
   bar.set_prefix("🎨  Rendering");
   bar.set_style(ProgressStyle::default_bar()
@@ -76,10 +52,11 @@ pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -
 }
 
 fn color(r: &Ray, scene: &Scene, depth: i32) -> Vec3 {
-  let hit = scene.model.hit(&r, 0.001, f32::MAX);
+  let hit = scene.bvh.hit(&r, 0.001, f32::MAX);
 
   match hit {
     Some(rec) => {
+      // println!("{:?} {:?}", depth, rec.p);
       let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
       if depth < scene.max_ray_depth {
         match rec.material.scatter(&r, &rec) {

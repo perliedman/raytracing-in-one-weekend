@@ -8,6 +8,7 @@ use ::ray::Ray;
 use ::material::HitRecord;
 use ::hitable::Hitable;
 
+#[derive(Debug)]
 pub struct BvhTree<'a> {
   nodes: Vec<BvhNode<'a>>,
   root: NodeId

@@ -192,7 +192,7 @@ fn cornell_box() -> Vec<Box<Hitable>> {
   let red = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.65, 0.05, 0.05)) });
   let white: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.73, 0.73, 0.73)) });
   let green: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.12, 0.45, 0.15)) });
-  let light = Arc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(15.0, 15.0, 15.0)) });
+  let light = Arc::new(DiffuseLight { emit: Box::new(ConstantTexture::new(16.0, 16.0, 16.0)) });
   let dielectric: Arc<Material> = Arc::new(Dielectric { ref_idx: 1.8 });
   let subsurface: Vec<Box<Hitable>> = vec![
     Box::new(Sphere {center: Vec3::new(0.0, 0.0, 0.0), radius: 60.0, material: Arc::clone(&dielectric) }),
@@ -203,12 +203,14 @@ fn cornell_box() -> Vec<Box<Hitable>> {
   ];
 
   vec![
-    Box::new(Triangle::new(Vec3::new(230., 425., 165.), Vec3::new(50., 305., 185.), Vec3::new(330., 285., 195.), Arc::clone(&green))),
     Box::new(FlipNormals { hitable: Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: green }) }),
     Box::new(YzRect { y0: 0.0, y1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: red }),
-    Box::new(XzRect { x0: 213.0, x1: 343.0, z0: 227.0, z1: 332.0, k: 554.0, material: light }),
+    Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 800.0, material: light }),
     Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 0.0, material: Arc::clone(&white) }),
-    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Arc::clone(&white) }) }),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 213.0, z0: 0.0, z1: 555.0, k: 555.0, material: Arc::clone(&white) }) }),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 343.0, x1: 555.0, z0: 0.0, z1: 555.0, k: 555.0, material: Arc::clone(&white) }) }),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 0.0, z1: 227.0, k: 555.0, material: Arc::clone(&white) }) }),
+    Box::new(FlipNormals { hitable: Box::new(XzRect { x0: 0.0, x1: 555.0, z0: 332.0, z1: 555.0, k: 555.0, material: Arc::clone(&white) }) }),
     Box::new(FlipNormals { hitable: Box::new(XyRect { x0: 0.0, x1: 555.0, y0: 0.0, y1: 555.0, k: 555.0, material: Arc::clone(&white) }) }),
     Box::new(Transform::new(
       Box::new(new_box(Vec3::new(0.0, 0.0, 0.0), Vec3::new(165.0, 165.0, 165.0), Arc::clone(&white))),
@@ -223,5 +225,9 @@ fn cornell_box() -> Vec<Box<Hitable>> {
       Mat44::translate(Vec3::new(130.0, 225.0, 65.0)) * Mat44::rotate(-18.0, Vec3::new(0.0, 1.0, 0.0)) *
       Mat44::translate(Vec3::new(82.5, 0.0, 82.5))
     )),
+    Box::new(ConstantMedium::new(
+      Box::new(Sphere {center: Vec3::new(0.0, 0.0, 0.0), radius: 700.0, material: Arc::clone(&white) }),
+      0.0002,
+      Box::new(ConstantTexture::new(1., 1., 1.))))
   ]
 }

@@ -9,14 +9,12 @@ use self::indicatif::{ProgressBar, ProgressStyle, HumanDuration};
 
 use ::vec3::*;
 use ray::Ray;
-use hitable::*;
+use geometry::*;
 use camera::Camera;
 use scene::Scene;
 
 pub fn render(scene: &Scene, camera: &Camera, nx: usize, ny: usize, ns: usize) -> Vec<u8> {
   println!("{}", scene.bvh);
-  println!("{:?}", scene.bvh.bounding_box());
-  println!("{:?}", camera);
 
   let bar = &Box::new(ProgressBar::new((nx * ny / 64) as u64));
   bar.set_prefix("🎨  Rendering");

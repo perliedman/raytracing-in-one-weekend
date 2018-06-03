@@ -1,39 +1,34 @@
 extern crate clap;
 extern crate rand;
 extern crate png;
-extern crate tobj;
 
 use std::f32;
 use std::fs::File;
+use std::io::BufWriter;
+use std::path::Path;
 use std::sync::Arc;
 use clap::{App, Arg};
 
 mod vec3;
 mod mat44;
 mod ray;
-mod hitable;
+mod geometry;
 mod bvh;
 mod camera;
 mod renderer;
 mod aabb;
 mod material;
-mod triangles;
 mod scene;
 
-use std::path::Path;
-use std::io::BufWriter;
 use png::HasParameters;
-use tobj::load_obj;
 
 use vec3::{Vec3, unit_vector};
 use mat44::Mat44;
 use ray::Ray;
-use hitable::*;
+use geometry::*;
 use material::*;
 use camera::Camera;
 use renderer::*;
-use bvh::BvhTree;
-use triangles::*;
 use scene::*;
 
 fn main() {
@@ -103,34 +98,8 @@ fn main() {
 }
 
 fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
-  let obj = tobj::load_obj(path);
-  let (models, materials) = obj.unwrap();
-  let mut world: Vec<Box<Hitable>> = Vec::new();
-
-  let mat: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.6, 0.6, 0.6)) });
-
-  for m in models.iter() {
-    let mesh = &m.mesh;
-    for f in 0..mesh.indices.len() / 3 {
-      let i0 = mesh.indices[3 * f] as usize;
-      let i1 = mesh.indices[3 * f + 1] as usize;
-      let i2 = mesh.indices[3 * f + 2] as usize;
-      let v0 = Vec3::new(mesh.positions[i0 * 3], mesh.positions[i0 * 3 + 1], mesh.positions[i0 * 3 + 2]);
-      let v1 = Vec3::new(mesh.positions[i1 * 3], mesh.positions[i1 * 3 + 1], mesh.positions[i1 * 3 + 2]);
-      let v2 = Vec3::new(mesh.positions[i2 * 3], mesh.positions[i2 * 3 + 1], mesh.positions[i2 * 3 + 2]);
-
-      let tri: Triangle;
-      if mesh.normals.len() > 0 {
-        let normal = Vec3::new(mesh.normals[i0 * 3], mesh.normals[i0 * 3 + 1], mesh.normals[i0 * 3 + 2]);
-        tri = Triangle::new_with_normal(v0, v1, v2, normal, Arc::clone(&mat))
-      } else {
-        tri = Triangle::new(v0, v1, v2, Arc::clone(&mat));
-      }
-
-      world.push(Box::new(tri));
-    }
-  }
-
+  println!("Loading OBJ model from {}", path.as_str());
+  let mut world = obj_to_hitable(path);
   let scene = Scene::new(&mut world, Box::new(SimpleSky {}), max_ray_depth);
   let bbox = scene.bvh.bounding_box().unwrap();
 
@@ -147,7 +116,7 @@ fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) 
     Vec3::new(0.0, 1.0, 0.0),
     45.0,
     (nx as f32) / (ny as f32),
-    1.,
+    0.,
     dist_to_focus);
 
   render(&scene, &camera, nx, ny, ns)

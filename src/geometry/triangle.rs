@@ -4,7 +4,7 @@ use ::material::*;
 use ::vec3::{Vec3};
 use ::ray::Ray;
 use ::aabb::Aabb;
-use ::hitable::*;
+use ::geometry::*;
 use ::bvh::BvhTree;
 
 pub struct Triangle {

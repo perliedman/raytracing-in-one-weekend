@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use ::aabb::{Aabb, surrounding_box};
 use ::ray::Ray;
 use ::material::HitRecord;
-use ::hitable::Hitable;
+use ::geometry::Hitable;
 
 #[derive(Debug)]
 pub struct BvhTree<'a> {

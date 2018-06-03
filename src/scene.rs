@@ -1,6 +1,6 @@
 use vec3::*;
 use ray::Ray;
-use hitable::Hitable;
+use geometry::Hitable;
 use bvh::BvhTree;
 
 pub trait SceneEnvironment : Sync {

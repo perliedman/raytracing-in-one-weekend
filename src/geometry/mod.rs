@@ -1,8 +1,13 @@
 extern crate rand;
+extern crate tobj;
+
+pub mod triangle;
 
 use std::f32;
 use std::fmt;
 use std::sync::Arc;
+use std::path::Path;
+use std::collections::HashMap;
 
 use ::material::{Material, HitRecord, Isotropic, Texture};
 
@@ -10,6 +15,8 @@ use ::vec3::{Vec3};
 use ::mat44::Mat44;
 use ::ray::Ray;
 use ::aabb::{Aabb, surrounding_box};
+use ::material::*;
+use triangle::Triangle;
 
 pub trait Hitable : Sync {
   fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord>;
@@ -398,4 +405,50 @@ impl Hitable for ConstantMedium {
 
     None
   }
+}
+
+pub fn obj_to_hitable(path: &Path) -> Vec<Box<Hitable>> {
+  let obj = self::tobj::load_obj(path);
+  let (models, mtls) = obj.unwrap();
+  let mut world: Vec<Box<Hitable>> = Vec::new();
+
+  let default_mat: Arc<Material> = Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(0.6, 0.6, 0.6)) });
+  let materials: Vec<Arc<Material>> = mtls.iter().map(|m| {
+    let mat: Arc<Material> = match m.illumination_model {
+      Some(7) => Arc::new(Dielectric { ref_idx: m.optical_density }),
+      Some(5) => Arc::new(Metal { albedo: Vec3::new(m.diffuse[0], m.diffuse[1], m.diffuse[2]), fuzz: 1. / m.shininess }),
+      _ => Arc::new(Lambertian { albedo: Box::new(ConstantTexture::new(m.diffuse[0], m.diffuse[1], m.diffuse[2])) })
+    };
+
+    mat
+  }).collect();
+
+  for m in models.iter() {
+    let mesh = &m.mesh;
+    for f in 0..mesh.indices.len() / 3 {
+      let i0 = mesh.indices[3 * f] as usize;
+      let i1 = mesh.indices[3 * f + 1] as usize;
+      let i2 = mesh.indices[3 * f + 2] as usize;
+      let v0 = Vec3::new(mesh.positions[i0 * 3], mesh.positions[i0 * 3 + 1], mesh.positions[i0 * 3 + 2]);
+      let v1 = Vec3::new(mesh.positions[i1 * 3], mesh.positions[i1 * 3 + 1], mesh.positions[i1 * 3 + 2]);
+      let v2 = Vec3::new(mesh.positions[i2 * 3], mesh.positions[i2 * 3 + 1], mesh.positions[i2 * 3 + 2]);
+
+      let mat: Arc<Material> = match mesh.material_id {
+        Some(id) => Arc::clone(&materials[id]),
+        None => Arc::clone(&default_mat)
+      };
+
+      let tri: Triangle;
+      if mesh.normals.len() > 0 {
+        let normal = Vec3::new(mesh.normals[i0 * 3], mesh.normals[i0 * 3 + 1], mesh.normals[i0 * 3 + 2]);
+        tri = Triangle::new_with_normal(v0, v1, v2, normal, mat)
+      } else {
+        tri = Triangle::new(v0, v1, v2, Arc::clone(&mat));
+      }
+
+      world.push(Box::new(tri));
+    }
+  }
+
+  world
 }

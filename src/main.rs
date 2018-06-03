@@ -98,7 +98,7 @@ fn main() {
 }
 
 fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) -> Vec<u8> {
-  println!("Loading OBJ model from {}", path.as_str());
+  println!("Loading OBJ model from {}", path.to_str().unwrap());
   let mut world = obj_to_hitable(path);
   let scene = Scene::new(&mut world, Box::new(SimpleSky {}), max_ray_depth);
   let bbox = scene.bvh.bounding_box().unwrap();
@@ -107,7 +107,7 @@ fn render_obj(path: &Path, nx: usize, ny: usize, ns: usize, max_ray_depth: i32) 
     (bbox.max[0] + bbox.min[0]) / 2.,
     (bbox.max[1] + bbox.min[1]) / 2.,
     (bbox.max[2] + bbox.min[2]) / 2.);
-  let lookfrom = Vec3::new(lookat[0], lookat[1], lookat[2] + (bbox.max[2] - bbox.min[2]) * 1.);
+  let lookfrom = Vec3::new(lookat[0], lookat[1], lookat[2] + (bbox.max[2] - bbox.min[2]) * 3.);
   let dist_to_focus = (lookfrom-lookat).length();
 
   let camera = Camera::new(

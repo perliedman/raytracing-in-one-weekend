@@ -5,7 +5,6 @@ use ::vec3::{Vec3};
 use ::ray::Ray;
 use ::aabb::Aabb;
 use ::geometry::*;
-use ::bvh::BvhTree;
 
 pub struct Triangle {
   v0: Vec3,
@@ -13,12 +12,6 @@ pub struct Triangle {
   v2: Vec3,
   normal: Vec3,
   material: Arc<Material>
-}
-
-pub struct TriangleMesh<'a> {
-  pub tris: Vec<Triangle>,
-  pub material: Arc<Material>,
-  bvh: BvhTree<'a>
 }
 
 impl Triangle {
@@ -86,19 +79,3 @@ impl Hitable for Triangle {
     })
   }
 }
-
-// impl<'a> TriangleMesh<'a> {
-//   pub fn new(tris: &mut Vec<Box<Triangle>>, material: Arc<Material>) -> TriangleMesh<'a> {
-//     TriangleMesh { tris, material, bvh: BvhTree::new(tris) }
-//   }
-// }
-
-// impl<'a> Hitable for TriangleMesh<'a> {
-//   fn bounding_box(&self) -> Option<Aabb> {
-//     self.bvh.bounding_box()
-//   }
-
-//   fn hit(&self, r: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
-//     self.bvh.hit(r, tmin, tmax)
-//   }
-// }
